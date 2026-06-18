@@ -32,6 +32,11 @@ The project is split into three major parts:
 - `server/` for the Node/Express proxy layer and WebSocket replay service
 - `frontend/` for the React dashboard, map UI, controls, and analytics views
 
+### MapmyIndia (Mappls) Integration
+
+We have integrated MapmyIndia (Mappls) APIs into the project to improve data snapping accuracy (Phase 2) and frontend map rendering (Phase 2+). To prevent code breakage, the core NetworkX/OSMnx graph engine remains the base architecture, and MapmyIndia integration is designed with a graceful fallback. For details, see [docs/mapmyindia_integration.md](file:///Users/naitikrishu/Desktop/Grid-Unlocked/docs/mapmyindia_integration.md).
+
+
 ## Folder Structure
 
 ```text
@@ -150,8 +155,9 @@ gridlock/
 - download Bengaluru road graph from OpenStreetMap
 - export roads to GeoJSON
 - download ward or zone polygons
-- snap events to nearest road nodes
+- snap events to nearest road nodes using **MapmyIndia Snap to Road API** (with a graceful fallback to standard OSMnx `nearest_nodes` matching if credentials are not configured)
 - spatially join events to zones
+
 
 This is the most critical dependency phase because later ML, routing, and frontend work depend on these outputs.
 
@@ -328,8 +334,17 @@ The project relies heavily on these generated artifacts:
 ```bash
 python -m venv venv
 source venv/bin/activate
-pip install osmnx networkx geopandas shapely pandas requests pickle5
+pip install osmnx networkx geopandas shapely pandas requests pickle5 python-dotenv
 ```
+
+#### MapmyIndia API Key Configuration
+Create a `.env` file inside the `ml/` directory to store your MapmyIndia API credentials:
+```env
+MAPMYINDIA_CLIENT_ID=your_client_id
+MAPMYINDIA_CLIENT_SECRET=your_client_secret
+MAPMYINDIA_REST_API_KEY=your_rest_api_key
+```
+
 
 Additional ML and API packages expected in the plan include:
 

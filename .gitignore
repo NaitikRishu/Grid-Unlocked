@@ -35,3 +35,7 @@ ml/venv/
 node_modules/
 dist/
 build/
+
+# Large generated geospatial files
+ml/data/geo/bengaluru_graph.pkl
+ml/data/geo/bengaluru_roads.geojson
