@@ -1,0 +1,63 @@
+{
+  "original_rows": 298450,
+  "deduplicated_rows": 298450,
+  "duplicates_removed": 0,
+  "core_features": [
+    "id",
+    "latitude",
+    "longitude",
+    "violation_type",
+    "created_datetime",
+    "validation_status",
+    "junction_name",
+    "police_station"
+  ],
+  "optional_features": [
+    "location",
+    "vehicle_number",
+    "vehicle_type",
+    "offence_code",
+    "modified_datetime",
+    "device_id",
+    "created_by_id",
+    "center_code",
+    "data_sent_to_scita",
+    "data_sent_to_scita_timestamp",
+    "updated_vehicle_number",
+    "updated_vehicle_type",
+    "validation_timestamp"
+  ],
+  "high_missing_features": [
+    "description",
+    "closed_datetime",
+    "action_taken_timestamp"
+  ],
+  "dropped_coordinates": 168,
+  "null_counts": {
+    "id": 0,
+    "latitude": 0,
+    "longitude": 0,
+    "location": 3038,
+    "vehicle_number": 0,
+    "vehicle_type": 0,
+    "description": 298282,
+    "violation_type": 0,
+    "offence_code": 0,
+    "created_datetime": 5,
+    "closed_datetime": 298282,
+    "modified_datetime": 0,
+    "device_id": 0,
+    "created_by_id": 5,
+    "center_code": 11259,
+    "police_station": 5,
+    "data_sent_to_scita": 0,
+    "junction_name": 5,
+    "action_taken_timestamp": 298282,
+    "data_sent_to_scita_timestamp": 256146,
+    "updated_vehicle_number": 125166,
+    "updated_vehicle_type": 125166,
+    "validation_status": 125166,
+    "validation_timestamp": 125332
+  },
+  "final_rows": 298282
+}
