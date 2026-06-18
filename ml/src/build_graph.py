@@ -46,7 +46,7 @@ def main():
     print(f"Road edges saved to {roads_path}")
 
     print("Step 4: Downloading BBMP ward zones GeoJSON...")
-    zones_url = "https://raw.githubusercontent.com/datameet/Municipal_Spatial_Data/master/bangalore/BBMP_Wards.geojson"
+    zones_url = "https://raw.githubusercontent.com/datameet/Municipal_Spatial_Data/master/Bangalore/BBMP.geojson"
     try:
         r = requests.get(zones_url, timeout=30)
         r.raise_for_status()

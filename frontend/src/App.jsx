@@ -1,121 +1,84 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useState } from 'react'
+import client from './api/client'
+import Header from './components/Layout/Header'
+import Sidebar from './components/Layout/Sidebar'
+import BengaluruMap from './components/Map/BengaluruMap'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [backendState, setBackendState] = useState({
+    loading: true,
+    ok: false,
+    message: 'Checking backend connection...',
+  })
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadStatus() {
+      try {
+        const response = await client.get('/ping')
+        if (!cancelled) {
+          setBackendState({
+            loading: false,
+            ok: response.data?.status === 'ok',
+            message: 'FastAPI responded successfully through the Node proxy.',
+          })
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setBackendState({
+            loading: false,
+            ok: false,
+            message:
+              error.response?.data?.message ||
+              'Backend not reachable yet. Start FastAPI on :8000 and Express on :3001.',
+          })
+        }
+      }
+    }
+
+    loadStatus()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+    <main className="app-shell">
+      <Header />
+
+      <section className="status-strip">
+        <article className={`status-card ${backendState.ok ? 'is-good' : 'is-warn'}`}>
+          <p className="panel__label">Backend status</p>
+          <h2>{backendState.loading ? 'Checking...' : backendState.ok ? 'Connected' : 'Needs startup'}</h2>
+          <p className="panel__text">{backendState.message}</p>
+        </article>
+
+        <article className="status-card">
+          <p className="panel__label">Data status</p>
+          <h2>Phase 1 outputs present</h2>
+          <p className="panel__text">
+            Cleaned events and violations CSVs are in the repo, so the project can build
+            forward from real data instead of placeholders.
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+        </article>
+
+        <article className="status-card">
+          <p className="panel__label">Map provider</p>
+          <h2>MapmyIndia path prepared</h2>
+          <p className="panel__text">
+            The current shell uses an OSM fallback tile layer while the MapmyIndia tile
+            and snap-to-road implementation is finalized.
+          </p>
+        </article>
       </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
+      <section className="workspace">
+        <Sidebar />
+        <BengaluruMap />
       </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 
