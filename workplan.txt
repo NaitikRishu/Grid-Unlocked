@@ -1,0 +1,1077 @@
+cat > /mnt/user-data/outputs/gridlock_workplan_detailed.txt << 'ENDOFFILE'
+
+================================================================
+GRIDLOCK AI — ULTRA DETAILED WORKPLAN + FOLDER STRUCTURE
+================================================================
+
+TEAM
+----
+A (YOU): MAP + OSM + MAPMYINDIA (MAPPLS) + GRAPH ENGINE + SIMULATION + ROUTE ENGINE + RESOURCE ALLOCATOR
+B:       ML + FASTAPI + DATA CLEANING + FEATURE ENGINEERING + MODEL + WEBSOCKET BACKEND
+C:       FRONTEND + REACT + DASHBOARD + MAP UI
+
+================================================================
+FOLDER STRUCTURE
+================================================================
+
+gridlock/
+│
+├── ml/
+│   ├── .env                                    Mappls credentials                                         [B owns everything here]
+│   │
+│   ├── data/
+│   │   ├── raw/
+│   │   │   ├── events.csv                      raw dataset 1 from HackerEarth
+│   │   │   └── violations.csv                  raw dataset 2 from HackerEarth
+│   │   │
+│   │   ├── processed/
+│   │   │   ├── events_clean.csv                after Phase 1 cleaning
+│   │   │   ├── violations_clean.csv            after Phase 1 cleaning
+│   │   │   ├── feature_matrix.csv              after Phase 3 feature engineering
+│   │   │   ├── node_mapping.csv                event lat/lon snapped to OSM node  [A generates]
+│   │   │   ├── zone_scores.csv                 per-zone congestion scores          [A generates]
+│   │   │   └── replay_data.json                time-series snapshots for WS replay [A generates]
+│   │   │
+│   │   └── geo/
+│   │       ├── bengaluru_graph.pkl             NetworkX graph from osmnx            [A generates]
+│   │       ├── bengaluru_roads.geojson         road edges as GeoJSON                [A generates]
+│   │       └── bengaluru_zones.geojson         BBMP ward polygons                   [A downloads]
+│   │
+│   ├── notebooks/
+│   │   └── eda.ipynb                           exploratory data analysis            [B owns]
+│   │
+│   ├── models/
+│   │   └── congestion_model.pkl                trained XGBoost model                [B owns]
+│   │
+│   ├── src/
+│   │   ├── clean_events.py                     Phase 1 — clean Dataset 1            [B owns]
+│   │   ├── clean_violations.py                 Phase 1 — clean Dataset 2            [B owns]
+│   │   ├── feature_engineering.py              Phase 3 — build feature_matrix.csv   [B owns]
+│   │   ├── train_model.py                      Phase 4 — train XGBoost, save pkl    [B owns]
+│   │   ├── inference.py                        Phase 4 — load pkl, predict          [B owns]
+│   │   ├── build_graph.py                      Phase 2 — download OSM, NetworkX     [A owns]
+│   │   ├── snap_to_road.py                     Phase 2 — snap event lat/lon to node [A owns]
+│   │   ├── graph_utils.py                      Phase 2 — helper functions           [A owns]
+│   │   ├── congestion_propagation.py           Phase 5 — Cj = Ci * exp(-lambda*d)  [A owns]
+│   │   ├── route_engine.py                     Phase 6 — shortest_path, alternates  [A owns]
+│   │   ├── event_simulator.py                  Phase 7 — what-if simulation logic   [A owns]
+│   │   ├── resource_allocator.py               Phase 8 — greedy allocator           [A owns]
+│   │   └── replay_generator.py                 Phase 9 — generate replay_data.json  [A owns]
+│   │
+│   ├── api/                                    FastAPI — B owns this
+│   │   ├── main.py                             FastAPI app entry point
+│   │   ├── schemas.py                          Pydantic request/response models
+│   │   └── routes/
+│   │       ├── events.py                       GET /events, GET /events/{id}
+│   │       ├── zones.py                        GET /zones
+│   │       ├── simulate.py                     POST /simulate
+│   │       ├── violations.py                   GET /violations/heatmap
+│   │       ├── routes.py                       GET /routes/{event_id}
+│   │       └── analytics.py                    GET /analytics/post-event, /zone-summary
+│   │
+│   └── requirements.txt
+│
+├── server/                                     [B owns everything here]
+│   │
+│   ├── index.js                                Express entry point, mounts routes + WS
+│   ├── config.js                               port, FastAPI base URL, CORS origins
+│   │
+│   ├── routes/
+│   │   └── proxy.js                            forwards /api/* to FastAPI on port 8000
+│   │
+│   ├── ws/
+│   │   └── replay.js                           WebSocket handler — emits replay snapshots
+│   │
+│   ├── middleware/
+│   │   └── cors.js                             CORS config for React dev server
+│   │
+│   └── package.json
+│
+├── frontend/                                   [C owns everything here]
+│   │
+│   ├── src/
+│   │   │
+│   │   ├── components/
+│   │   │   │
+│   │   │   ├── Map/
+│   │   │   │   ├── BengaluruMap.jsx            Leaflet map, centred 12.97/77.59 zoom 12
+│   │   │   │   ├── ZoneChoropleth.jsx          zone GeoJSON coloured by score
+│   │   │   │   ├── EventPin.jsx                marker per past event, click popup
+│   │   │   │   ├── ViolationHeatmap.jsx        Leaflet.heat layer from /violations/heatmap
+│   │   │   │   └── DiversionRoutes.jsx         blue polylines from /simulate alternate routes
+│   │   │   │
+│   │   │   ├── Controls/
+│   │   │   │   ├── EventSelector.jsx           dropdown of past events, filter by type/zone
+│   │   │   │   ├── WhatIfPanel.jsx             manpower slider, barricade slider, diversion toggle
+│   │   │   │   └── TimeOffsetSlider.jsx        -120 to +120 minutes start time offset
+│   │   │   │
+│   │   │   ├── Analytics/
+│   │   │   │   ├── DelayChart.jsx              Recharts bar — before vs after delay per zone
+│   │   │   │   ├── ZoneRankTable.jsx           zone | score | police | barricades table
+│   │   │   │   └── PostEventAccuracy.jsx       predicted vs actual duration table
+│   │   │   │
+│   │   │   └── Layout/
+│   │   │       ├── Sidebar.jsx
+│   │   │       └── Header.jsx
+│   │   │
+│   │   ├── hooks/
+│   │   │   ├── useSimulation.js                calls POST /simulate, returns zone scores + routes
+│   │   │   ├── useReplay.js                    opens WS, drives map frame by frame
+│   │   │   └── useEvents.js                    fetches GET /events on mount
+│   │   │
+│   │   ├── store/
+│   │   │   └── appStore.js                     Zustand — selectedEvent, zoneScores, whatIfParams
+│   │   │
+│   │   ├── api/
+│   │   │   └── client.js                       axios instance pointing to Node server port 3001
+│   │   │
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   │
+│   ├── public/
+│   │   └── bengaluru_zones.geojson             copy of geo file served statically
+│   │
+│   ├── index.html
+│   └── package.json
+│
+├── docs/
+│   ├── concept_note.md                         hackathon submission write-up
+│   ├── api_contract.md                         all endpoint specs — frozen after Phase 5
+│   ├── mapmyindia_integration.md               MapmyIndia (Mappls) integration guide
+│   └── demo_script.md
+│
+└── README.md
+
+================================================================
+API CONTRACT (FREEZE AFTER PHASE 5 — ALL THREE AGREE ON THIS)
+================================================================
+
+GET  /api/events
+     response: [{id, event_type, lat, lon, zone_id, start_datetime,
+                 end_datetime, duration_minutes, priority, status}]
+
+GET  /api/events/:id
+     response: single event object + predicted_score + actual_duration
+
+GET  /api/zones
+     response: GeoJSON FeatureCollection, each feature has zone_id + baseline_score
+
+GET  /api/violations/heatmap
+     response: [{lat, lon, count}]  (one row per junction)
+
+GET  /api/routes/:event_id
+     response: [{route_geojson, estimated_delay_minutes, route_label}]
+
+POST /api/simulate
+     request body:
+     {
+       event_type: string,
+       latitude: float,
+       longitude: float,
+       start_datetime: ISO string,
+       manpower: int (0-50),
+       barricades: int (0-20),
+       diversion_active: bool,
+       start_time_offset_minutes: int (-120 to 120)
+     }
+     response:
+     {
+       zone_scores: {zone_id: score},
+       predicted_duration_minutes: int,
+       high_impact: bool,
+       delay_saved_minutes: int,
+       alternate_routes: [GeoJSON features],
+       resource_allocation: {zone_id: {police: int, barricades: int}}
+     }
+
+GET  /api/analytics/post-event
+     response: [{event_id, event_type, zone_id,
+                 predicted_duration, actual_duration, error_percent}]
+
+GET  /api/analytics/zone-summary
+     response: [{zone_id, avg_duration, event_count, top_event_type,
+                 avg_violations_7d}]
+
+WS   ws://localhost:3001/replay
+     client sends: {event_id: string}
+     server emits every 800ms:
+     {
+       type: "SNAPSHOT",
+       timestamp: ISO string,
+       zone_scores: {zone_id: score},
+       progress_percent: int
+     }
+     server emits on finish:
+     {type: "DONE"}
+
+================================================================
+PHASE 0 — PROJECT SETUP
+================================================================
+
+A (YOU):
+--------
+Tasks:
+  - Create ml/src/ folder
+  - python -m venv venv
+  - pip install osmnx networkx geopandas shapely pandas requests pickle5 python-dotenv
+  - Create empty files:
+    ml/src/build_graph.py
+    ml/src/snap_to_road.py
+    ml/src/graph_utils.py
+    ml/src/congestion_propagation.py
+    ml/src/route_engine.py
+    ml/src/event_simulator.py
+    ml/src/resource_allocator.py
+    ml/src/replay_generator.py
+  - Verify osmnx import works: python -c "import osmnx; print('ok')"
+
+Deliverable:
+  venv working, all A-owned files created as empty
+
+B:
+---
+Tasks:
+  - pip install pandas xgboost lightgbm scikit-learn fastapi uvicorn pydantic
+  - Create ml/api/main.py with dummy GET /ping returning {status: ok}
+  - Setup Express server/:
+    npm init, install express http-proxy-middleware ws cors nodemon
+    Create index.js with hello world on port 3001
+  - Verify FastAPI runs on 8000, Express runs on 3001
+
+Deliverable:
+  GET /ping returns {status: ok}
+  Express returns hello world
+
+C:
+---
+Tasks:
+  - npm create vite@latest frontend -- --template react
+  - npm install leaflet react-leaflet recharts zustand axios leaflet.heat
+  - npm install -D tailwindcss postcss autoprefixer && npx tailwindcss init -p
+  - Confirm app runs on port 5173
+
+Deliverable:
+  React app renders on localhost:5173
+
+================================================================
+PHASE 1 — DATA CLEANING
+================================================================
+
+A (YOU):
+--------
+Tasks:
+  - Nothing this phase
+  - Read both raw CSVs to understand column shapes
+  - Note down distinct values of: zone, junction, corridor
+    (you need these for Phase 2 spatial join)
+
+B:
+---
+
+File: ml/src/clean_events.py
+Tasks:
+  - Load data/raw/events.csv
+  - Drop duplicate rows on id
+  - Parse to datetime: start_datetime, end_datetime, closed_datetime, created_date
+  - Calculate:
+    event_duration_minutes = (closed_datetime - start_datetime).total_seconds() / 60
+    response_lag_minutes   = (start_datetime - created_date).total_seconds() / 60
+  - Drop rows where event_duration_minutes is null, < 0, or > 2880
+  - Drop rows where latitude or longitude is null
+  - Drop rows where latitude not in [12.7, 13.2] or longitude not in [77.4, 77.8]
+  - Normalize to lowercase strip: event_type, priority, status
+  - Print value_counts: event_type, priority, status, zone
+  - Export: data/processed/events_clean.csv
+
+File: ml/src/clean_violations.py
+Tasks:
+  - Load data/raw/violations.csv
+  - Drop duplicates on id
+  - Parse: created_datetime, closed_datetime, modified_datetime
+  - Drop rows where latitude or longitude null
+  - Drop rows outside Bengaluru bounding box
+  - Normalize to lowercase strip: violation_type, validation_status
+  - Calculate:
+    violation_duration_minutes = (closed_datetime - created_datetime).total_seconds() / 60
+  - Print value_counts: violation_type, junction_name, police_station
+  - Export: data/processed/violations_clean.csv
+
+  - Create ml/api/schemas.py:
+    Define all Pydantic models:
+    EventResponse, ZoneResponse, SimulateRequest,
+    SimulateResponse, ViolationPoint, ReplaySnapshot
+
+Deliverables:
+  data/processed/events_clean.csv
+  data/processed/violations_clean.csv
+  ml/api/schemas.py
+
+C:
+---
+Tasks:
+  - Create Layout/Header.jsx  — top bar, title "GridUnlocked"
+  - Create Layout/Sidebar.jsx — left panel placeholder
+  - Wire into App.jsx with basic Tailwind layout:
+    header top, sidebar left, map area right
+
+================================================================
+PHASE 2 — MAP GENERATION  [YOUR MOST CRITICAL PHASE]
+================================================================
+
+A (YOU):
+--------
+
+File: ml/src/build_graph.py
+Tasks:
+  - import osmnx as ox, pickle, json
+
+  - Download road graph:
+    G = ox.graph_from_place("Bengaluru, Karnataka, India", network_type="drive")
+
+  - Save graph as pickle:
+    with open("data/geo/bengaluru_graph.pkl", "wb") as f:
+        pickle.dump(G, f)
+
+  - Export road edges as GeoJSON:
+    edges = ox.graph_to_gdfs(G, nodes=False)
+    edges.to_file("data/geo/bengaluru_roads.geojson", driver="GeoJSON")
+
+  - Download BBMP ward zone polygons:
+    import requests
+    url = "https://raw.githubusercontent.com/datameet/Municipal_Spatial_Data/master/bangalore/BBMP_Wards.geojson"
+    r = requests.get(url)
+    with open("data/geo/bengaluru_zones.geojson", "w") as f:
+        f.write(r.text)
+
+  - Print: number of nodes, edges, zones loaded
+
+File: ml/src/snap_to_road.py
+Tasks:
+  - Load events_clean.csv and bengaluru_graph.pkl
+  - Implement MapmyIndia Snap to Road API client (OAuth2 token generation + /route/movement/snapToRoad API)
+  - For each event row:
+    Query MapmyIndia Snap to Road API to get high-accuracy coordinates (fallback to original coordinate if API fails/not configured)
+    nearest_node = ox.nearest_nodes(G, snapped_longitude, snapped_latitude)
+  - Create node_mapping.csv columns:
+    event_id, nearest_node_id, node_lat, node_lon
+  - Spatial join events to zones:
+    import geopandas as gpd
+    events_gdf = gpd.GeoDataFrame(events, geometry=gpd.points_from_xy(events.longitude, events.latitude))
+    zones_gdf  = gpd.read_file("data/geo/bengaluru_zones.geojson")
+    joined     = gpd.sjoin(events_gdf, zones_gdf, how="left", predicate="within")
+    Add zone_id column back to events_clean.csv
+  - Re-export events_clean.csv with zone_id added
+
+File: ml/src/graph_utils.py
+Tasks:
+  - Function load_graph()
+    loads bengaluru_graph.pkl, returns G
+
+  - Function get_nearest_node(G, lat, lon)
+    returns node_id
+
+  - Function get_edges_in_radius(G, lat, lon, radius_m)
+    returns list of (u, v, key) edge tuples within radius
+
+  - Function path_to_geojson(G, node_path, label, delay_minutes)
+    converts node list to GeoJSON LineString Feature
+    includes label and delay_minutes in properties
+    returns GeoJSON Feature dict
+
+Outputs — HAND THESE OFF IMMEDIATELY:
+  data/geo/bengaluru_graph.pkl          → give to B (needed for route engine import)
+  data/geo/bengaluru_roads.geojson      → give to C
+  data/geo/bengaluru_zones.geojson      → give to C + copy to frontend/public/
+  data/processed/node_mapping.csv
+  data/processed/events_clean.csv       (updated with zone_id) → give to B
+
+B:
+---
+Tasks:
+  - Create skeleton route files in ml/api/routes/:
+    events.py, zones.py, simulate.py, violations.py, routes.py, analytics.py
+  - All return dummy [] for now
+  - Mount all routes in api/main.py
+  - Configure CORS in main.py for localhost:3001
+
+C:
+---
+Tasks:
+  - Create BengaluruMap.jsx:
+    center=[12.9716, 77.5946], zoom=12
+    TileLayer from MapmyIndia Raster Tiles API:
+    URL: https://apis.mapmyindia.com/advancedmaps/v1/{MAPMYINDIA_REST_API_KEY}/tile/{z}/{x}/{y}.png
+    Add zoom controls and MapmyIndia attribution
+  - Load bengaluru_zones.geojson from public/ folder
+  - Render zones as grey polygons (hardcoded color for now)
+  - Confirm map renders in browser
+
+================================================================
+PHASE 3 — FEATURE ENGINEERING
+================================================================
+
+A (YOU):
+--------
+Tasks:
+  - Nothing this phase
+  - Verify node_mapping.csv and updated events_clean.csv are correct
+  - Share both files with B
+  - Check that zone_id column is populated for majority of events
+    If many nulls → debug snap_to_road.py spatial join
+
+B:
+---
+
+File: ml/src/feature_engineering.py
+Tasks:
+  - Load events_clean.csv (with zone_id) and violations_clean.csv
+
+  Features to build:
+
+  hour_of_day
+    events["start_datetime"].dt.hour
+
+  day_of_week
+    events["start_datetime"].dt.dayofweek  (0=Monday)
+
+  month
+    events["start_datetime"].dt.month
+
+  is_peak_hour
+    1 if hour_of_day in [7,8,9,10,17,18,19,20] else 0
+
+  requires_road_closure
+    binary 0/1
+
+  priority_encoded
+    {"high": 3, "medium": 2, "low": 1, default: 1}
+
+  event_type_encoded
+    one-hot encode top 8 event_type values
+    all others → "other"
+
+  response_lag_minutes
+    already computed in Phase 1
+
+  violation_density_7d
+    for each event row:
+      count violations where
+        junction_name == event.junction AND
+        violations.created_datetime between
+          (event.start_datetime - 7days) and event.start_datetime
+    if junction null → 0
+
+  historical_avg_duration
+    group events_clean by [event_type, zone_id]
+    mean event_duration_minutes per group
+    left join back to events_clean
+
+  concurrent_events_in_zone
+    for each event:
+      count other events where zone_id == this zone AND
+      time ranges overlap
+
+  congestion_score (target)
+    = min(event_duration_minutes / 120 * 100, 100)
+
+  high_impact (binary target)
+    1 if congestion_score >= 75 else 0
+
+  Export: data/processed/feature_matrix.csv
+    columns: all features + congestion_score + high_impact + event_id + zone_id
+
+  - Wire GET /api/events in proxy.js to forward to FastAPI
+  - Wire GET /api/zones in proxy.js
+  - Test both through Node: curl localhost:3001/api/events
+
+Deliverable:
+  data/processed/feature_matrix.csv
+
+C:
+---
+Tasks:
+  - Create EventPin.jsx:
+    Marker for each event (use dummy JSON array for now)
+    Click popup: event_type, zone_id, start_datetime, duration_minutes
+  - Create ViolationHeatmap.jsx:
+    Leaflet.heat layer with dummy [{lat, lon, count}]
+    Toggle button show/hide
+
+================================================================
+PHASE 4 — MODEL TRAINING
+================================================================
+
+A (YOU):
+--------
+Tasks:
+  - Nothing this phase
+  - Write skeleton congestion_propagation.py with function signatures only:
+    def propagate_scores(epicentre_zone_id, base_score, G, zones_gdf): pass
+    def aggregate_zone_scores(active_events_list, G, zones_gdf): pass
+  - You will implement these in Phase 5
+
+B:
+---
+
+File: ml/src/train_model.py
+Tasks:
+  - Load feature_matrix.csv
+  - Sort by start_datetime ascending
+  - Train/test split at 80% row index (time-based, not random)
+  - X = all columns except: congestion_score, high_impact,
+        event_id, zone_id, start_datetime, end_datetime
+  - y_reg = congestion_score
+  - y_cls = high_impact
+
+  - Train XGBoost regressor:
+    XGBRegressor(n_estimators=200, max_depth=6,
+                 learning_rate=0.05, subsample=0.8)
+  - Evaluate regression: RMSE, MAE, R2
+
+  - Train XGBoost classifier:
+    XGBClassifier(n_estimators=200, max_depth=5,
+                  learning_rate=0.05, scale_pos_weight=3)
+  - Evaluate classifier: F1, precision, recall
+
+  - Print top 10 feature importances
+  - Save: models/congestion_model.pkl
+         models/impact_classifier.pkl
+
+File: ml/src/inference.py
+Tasks:
+  - Function load_models()
+    loads both pkl files, returns (regressor, classifier)
+
+  - Function predict_event(event_dict)
+    builds feature vector from event_dict
+    returns {congestion_score: float,
+             high_impact: bool,
+             high_impact_probability: float}
+
+  - Function predict_batch(events_list)
+    returns list of predict_event results
+
+  - Wire GET /api/events to return real data from events_clean.csv
+  - Wire GET /api/events/:id to return single event + run predict_event
+
+Deliverables:
+  models/congestion_model.pkl
+  models/impact_classifier.pkl
+
+C:
+---
+Tasks:
+  - Create ZoneChoropleth.jsx:
+    Load bengaluru_zones.geojson from public/
+    Color each zone by score:
+      0-33  → green  (#22c55e)
+      34-66 → amber  (#f59e0b)
+      67-100 → red   (#ef4444)
+    Tooltip on hover: zone name, score
+    Use hardcoded dummy scores dict for now
+
+================================================================
+PHASE 5 — CONGESTION PROPAGATION
+================================================================
+
+A (YOU):
+--------
+
+File: ml/src/congestion_propagation.py
+Tasks:
+  - import networkx as nx, geopandas as gpd, numpy as np, math
+
+  - Function get_zone_centroid(zone_id, zones_gdf)
+    returns (lat, lon) of zone polygon centroid
+
+  - Function graph_distance_km(zone_id_1, zone_id_2, G, zones_gdf)
+    get centroid of each zone
+    snap centroids to nearest OSM nodes
+    run nx.shortest_path_length(G, node1, node2, weight="length")
+    convert metres to km
+    return distance_km
+    (Note: NetworkX is used for local calculation. Optionally, MapmyIndia Distance Matrix API can be used to validate/calibrate distances if API keys and query quotas permit)
+
+  - Function propagate_scores(epicentre_zone_id, base_score, G, zones_gdf)
+    lambda_decay = 0.3
+    for each zone in zones_gdf:
+      if zone == epicentre_zone_id:
+        score = base_score
+      else:
+        d = graph_distance_km(epicentre_zone_id, zone_id, G, zones_gdf)
+        score = base_score * math.exp(-lambda_decay * d)
+    return {zone_id: score}
+
+  - Function aggregate_zone_scores(active_events_list, G, zones_gdf)
+    scores = defaultdict(float)
+    for each event in active_events_list:
+      propagated = propagate_scores(event.zone_id, event.congestion_score, G, zones_gdf)
+      for zone_id, score in propagated.items():
+        scores[zone_id] += score
+    cap all scores at 100
+    return dict(scores)
+
+  - Generate zone_scores.csv:
+    For every event in events_clean.csv
+    Run aggregate_zone_scores treating that event as sole active event
+    Store rows: {event_id, zone_id, score}
+    Export to data/processed/zone_scores.csv
+
+B:
+---
+Tasks:
+  - Wire GET /api/zones in ml/api/routes/zones.py:
+    Load bengaluru_zones.geojson
+    Load zone_scores.csv baseline (average score per zone across all events)
+    Merge score onto GeoJSON properties
+    Return GeoJSON FeatureCollection
+
+  - Wire GET /api/violations/heatmap:
+    Load violations_clean.csv
+    Group by junction_name → get representative lat/lon + count
+    Return [{lat, lon, count}]
+
+  - Test both endpoints return real data
+
+C:
+---
+Tasks:
+  - Connect ZoneChoropleth.jsx to real GET /api/zones
+  - Remove dummy hardcoded scores
+  - Zone colours now driven by real API data
+
+================================================================
+PHASE 6 — ROUTE ENGINE
+================================================================
+
+A (YOU):
+--------
+
+File: ml/src/route_engine.py
+Tasks:
+  - import networkx as nx, osmnx as ox
+  - Load G from graph_utils.load_graph()
+
+  - Function get_blocked_edges(G, event_lat, event_lon, radius_m=500)
+    use graph_utils.get_edges_in_radius()
+    return list of (u, v, key) tuples
+
+  - Function compute_alternate_routes(G, origin_node, dest_node,
+                                       blocked_edges, num_routes=3)
+    G_copy = G.copy()
+    G_copy.remove_edges_from(blocked_edges)
+    routes = []
+    for i in range(num_routes):
+      try:
+        path = nx.shortest_path(G_copy, origin_node, dest_node, weight="length")
+        routes.append(path)
+        slightly increase weights on this path to force next route to differ
+      except nx.NetworkXNoPath:
+        break
+    return routes
+
+  - Function estimate_delay(congestion_score)
+    base_delay = 10
+    return round(base_delay * (1 + congestion_score / 50), 1)
+
+  - Function routes_to_geojson(G, routes_list, congestion_score)
+    labels = ["Fastest alternate", "Second alternate", "Third alternate"]
+    features = []
+    for i, path in enumerate(routes_list):
+      geojson = graph_utils.path_to_geojson(G, path, labels[i],
+                   estimate_delay(congestion_score))
+      features.append(geojson)
+    return {"type": "FeatureCollection", "features": features}
+    (Note: Calculated routes will be represented in standard GeoJSON and overlaid on top of the MapmyIndia base map in the React frontend)
+
+  - Pre-compute route_cache.pkl:
+    for each event in events_clean.csv:
+      origin_node = node_mapping[event.id]
+      blocked     = get_blocked_edges(G, event.lat, event.lon)
+      routes      = compute_alternate_routes(G, origin_node, ..., blocked)
+      geojson     = routes_to_geojson(G, routes, event.congestion_score)
+      cache[event.id] = geojson
+    save as data/processed/route_cache.pkl
+
+B:
+---
+Tasks:
+  - Wire GET /api/routes/:event_id in ml/api/routes/routes.py:
+    Load route_cache.pkl
+    Return cached GeoJSON FeatureCollection for that event_id
+  - Test with real event_id
+
+C:
+---
+Tasks:
+  - Create DiversionRoutes.jsx:
+    Accept routes GeoJSON FeatureCollection as prop
+    Render each Feature as polyline on Leaflet map
+    Blue     = features[0]  Fastest alternate
+    Orange   = features[1]  Second alternate
+    Grey     = features[2]  Third alternate
+    Show/hide toggle per route
+
+================================================================
+PHASE 7 — EVENT SIMULATOR (WHAT-IF ENGINE)
+================================================================
+
+A (YOU):
+--------
+
+File: ml/src/event_simulator.py
+Tasks:
+  - import inference, congestion_propagation, route_engine, resource_allocator
+  - Load G, zones_gdf, models on module load
+
+  - Function run_simulation(event_dict, params)
+    params keys:
+      manpower: int
+      barricades: int
+      diversion_active: bool
+      start_time_offset_minutes: int
+
+    Step 1 — Baseline prediction:
+      base_result = inference.predict_event(event_dict)
+      base_score  = base_result["congestion_score"]
+
+    Step 2 — Apply manpower effect:
+      score_after_manpower = base_score * (1 - params["manpower"] * 0.012)
+      score_after_manpower = max(0, score_after_manpower)
+
+    Step 3 — Apply barricade effect:
+      effective_radius = 500 - (params["barricades"] * 5)
+      effective_radius = max(100, effective_radius)
+
+    Step 4 — Apply time offset effect:
+      adjusted_hour = (original_hour + params["start_time_offset_minutes"] // 60) % 24
+      rebuild event_dict with adjusted hour_of_day and is_peak_hour
+      re-run inference.predict_event on adjusted features
+      use this as final adjusted_score
+
+    Step 5 — Propagate adjusted scores:
+      zone_scores = congestion_propagation.aggregate_zone_scores(
+                      [adjusted_event], G, zones_gdf)
+
+    Step 6 — Get alternate routes:
+      if params["diversion_active"]:
+        routes = route_engine from route_cache for this event
+      else:
+        routes = empty FeatureCollection
+
+    Step 7 — Resource allocation:
+      allocation = resource_allocator.allocate_resources(
+                     zone_scores,
+                     total_police=params["manpower"],
+                     total_barricades=params["barricades"])
+
+    Step 8 — Compute delay saved:
+      base_duration    = base_result["congestion_score"] / 100 * 120
+      adjusted_duration = adjusted_score / 100 * 120
+      delay_saved = round(base_duration - adjusted_duration, 1)
+
+    Return:
+    {
+      zone_scores: zone_scores,
+      predicted_duration_minutes: round(adjusted_duration),
+      high_impact: adjusted_score >= 75,
+      delay_saved_minutes: delay_saved,
+      alternate_routes: routes,
+      resource_allocation: allocation
+    }
+
+B:
+---
+Tasks:
+  - Wire POST /api/simulate in ml/api/routes/simulate.py:
+    Parse SimulateRequest pydantic model
+    Call event_simulator.run_simulation(event_dict, params)
+    Return SimulateResponse
+  - Wire in proxy.js: forward POST /api/simulate to FastAPI
+  - Test with Postman — send full request body, confirm response shape
+
+C:
+---
+Tasks:
+  - Create WhatIfPanel.jsx:
+    Slider: manpower 0-50       label "Police Officers: N"
+    Slider: barricades 0-20     label "Barricades: N"
+    Toggle: diversion_active    label "Activate Diversion Routes"
+    Slider: start_time_offset   -120 to +120 mins
+            display as "2 hrs earlier" / "On time" / "1 hr later"
+    Button: "Run Simulation"
+    On click: call POST /api/simulate with current slider values
+    Show spinner while loading
+
+  - On simulation response:
+    Pass zone_scores to ZoneChoropleth → map updates colours
+    Pass alternate_routes to DiversionRoutes → polylines appear
+    Show banner: "Saves X minutes"
+
+  - Create TimeOffsetSlider.jsx (extracted from WhatIfPanel, reusable)
+
+================================================================
+PHASE 8 — RESOURCE ALLOCATOR
+================================================================
+
+A (YOU):
+--------
+
+File: ml/src/resource_allocator.py
+Tasks:
+  - Function allocate_resources(zone_scores, total_police, total_barricades)
+    Input:
+      zone_scores:       {zone_id: score}
+      total_police:      int
+      total_barricades:  int
+
+    Logic:
+      Filter to zones with score > 0
+      Sort zones by score descending
+      total_weight = sum of all scores
+      For each zone:
+        police_alloc    = round(total_police * zone_score / total_weight)
+        barricade_alloc = round(total_barricades * zone_score / total_weight)
+      Fix rounding drift: add remainder to top zone
+      Minimum 1 police to any zone with score > 50
+
+    Edge cases:
+      total_police = 0     → all zones get 0
+      total_weight = 0     → return empty dict
+      only 1 zone > 0      → that zone gets everything
+
+    Return:
+      {zone_id: {police: int, barricades: int}}
+
+  - Integrate into event_simulator.py (already called in Phase 7 Step 7)
+  - Tune decay lambda in congestion_propagation.py if scores look wrong
+  - Tune manpower coefficient 0.012 based on test results
+
+B:
+---
+Tasks:
+  - Wire GET /api/analytics/post-event in analytics.py:
+    Load events_clean.csv and feature_matrix.csv
+    Run inference.predict_batch on all events
+    Compare predicted vs actual duration
+    Return [{event_id, event_type, zone_id,
+             predicted_duration, actual_duration, error_percent}]
+
+  - Wire GET /api/analytics/zone-summary in analytics.py:
+    Return [{zone_id, avg_duration, event_count,
+             top_event_type, avg_violations_7d}]
+
+C:
+---
+Tasks:
+  - Create ZoneRankTable.jsx:
+    Columns: Zone | Score | Police | Barricades | Top Event Type
+    Sorted by Score descending
+    Data from POST /simulate response resource_allocation field
+    Show below map or in sidebar
+
+================================================================
+PHASE 9 — REPLAY
+================================================================
+
+A (YOU):
+--------
+
+File: ml/src/replay_generator.py
+Tasks:
+  - Load events_clean.csv, congestion_propagation, graph_utils
+  - For each event in events_clean.csv:
+    num_steps = 20
+    for t in range(num_steps):
+      progress = t / num_steps
+      score_t  = base_score * math.sin(math.pi * progress)
+      zone_scores_t = congestion_propagation.aggregate_zone_scores(
+                        [{...event, congestion_score: score_t}], G, zones_gdf)
+      snapshot = {
+        timestamp: start_datetime + timedelta(minutes=duration*progress),
+        zone_scores: zone_scores_t
+      }
+      snapshots.append(snapshot)
+    replay_data[event.id] = snapshots
+
+  - Export: data/processed/replay_data.json
+    Format: {"event_id_1": [{timestamp, zone_scores}, ...], ...}
+
+B:
+---
+
+File: server/ws/replay.js
+Tasks:
+  - const WebSocket = require("ws")
+  - Accept WebSocket connection
+  - On message receive {event_id}:
+    fetch("http://localhost:8000/api/replay/" + event_id)
+    get back array of {timestamp, zone_scores} snapshots
+    i = 0
+    interval = setInterval(() => {
+      if i >= snapshots.length:
+        ws.send(JSON.stringify({type: "DONE"}))
+        clearInterval(interval)
+        return
+      snapshot = snapshots[i]
+      ws.send(JSON.stringify({
+        type: "SNAPSHOT",
+        timestamp: snapshot.timestamp,
+        zone_scores: snapshot.zone_scores,
+        progress_percent: Math.round(i / snapshots.length * 100)
+      }))
+      i++
+    }, 800)
+  - On client disconnect: clearInterval(interval)
+
+  - Update server/index.js:
+    const { WebSocketServer } = require("ws")
+    const wss = new WebSocketServer({ server })
+    wss.on("connection", require("./ws/replay"))
+
+  - Wire GET /api/replay/:event_id in analytics.py:
+    Load replay_data.json
+    Return snapshots array for event_id
+
+C:
+---
+Tasks:
+  - Create useReplay.js hook:
+    Open WebSocket: ws://localhost:3001/replay
+    Send {event_id} on open
+    On SNAPSHOT message: update zoneScores in Zustand store
+    On DONE: close WS, mark replay finished
+
+  - Add replay controls to EventSelector or EventPin popup:
+    "Play Replay" button
+    Progress bar 0-100% from progress_percent
+    Pause button (clearInterval equivalent — reconnect on resume)
+    Stop button (close WS)
+
+  - Create PostEventAccuracy.jsx:
+    Table: event | predicted duration | actual duration | error %
+    Data from GET /api/analytics/post-event
+    Color error_percent red if > 30%, green if < 15%
+
+================================================================
+PHASE 10 — INTEGRATION + SUBMISSION
+================================================================
+
+A (YOU):
+--------
+Tasks:
+  - End-to-end test your outputs:
+    event_simulator.run_simulation returns correct shape
+    replay_data.json has entries for at least 50 events
+    route_cache.pkl has entries for at least 50 events
+    zone_scores.csv has reasonable score distributions
+  - Fix any edge cases:
+    event not in route_cache → compute live, don't crash
+    zone not found after spatial join → assign to nearest zone
+  - Help C debug map rendering issues if needed
+
+B:
+---
+Tasks:
+  - Full end-to-end test:
+    Start FastAPI:  uvicorn api.main:app --port 8000
+    Start Express:  node server/index.js
+    Start React:    npm run dev
+    Flow to test:
+      1. Open map — MapmyIndia base tiles load, zones coloured from real data
+      2. Click event pin — popup shows real values
+      3. Adjust WhatIfPanel sliders
+      4. Click Run Simulation — map colours update, routes appear (aligned with MapmyIndia streets)
+      5. Click Play Replay — map animates through 20 frames
+      6. Check PostEventAccuracy table loads
+  - Fix proxy issues: CORS errors, JSON parse errors, timeouts
+  - Write README.md:
+    Setup steps for all three services
+    How to run end to end
+  - Write docs/concept_note.md:
+    Problem statement
+    Approach: two datasets, XGBoost, graph propagation, what-if
+    Model metrics: RMSE, F1, feature importance chart
+    Novelty: replay + what-if + post-event learning view
+    Future scope: real-time ASTraM feed, MapMyIndia integration
+
+C:
+---
+Tasks:
+  - Create DelayChart.jsx:
+    Recharts BarChart
+    Two bars per zone: baseline score vs simulated score
+    Show top 5 zones by score only
+    Updates on each simulation run
+  - Loading states on all API calls
+  - Error states if API call fails
+  - All 3 map layers toggle independently:
+    Zone choropleth toggle
+    Event pins toggle
+    Violation heatmap toggle
+    Diversion routes auto-appear after simulate
+  - Final UI pass
+
+================================================================
+PRIORITY — WHAT TO FINISH FIRST IF TIME IS SHORT
+================================================================
+
+MUST HAVE:
+  events_clean.csv + feature_matrix.csv                [B]
+  bengaluru_graph.pkl + bengaluru_zones.geojson         [A]
+  congestion_model.pkl + inference.py                   [B]
+  congestion_propagation.py working                     [A]
+  POST /simulate returning zone_scores                  [B]
+  ZoneChoropleth updating from simulate response        [C]
+  WhatIfPanel sliders + Run Simulation button           [C]
+
+NICE TO HAVE:
+  DiversionRoutes polylines on map                      [C]
+  WebSocket replay animation                            [A+B]
+  PostEventAccuracy table                               [C]
+  ViolationHeatmap layer                                [C]
+  ZoneRankTable                                         [C]
+
+CUT IF NO TIME:
+  DelayChart bar chart
+  Multiple alternate route colours
+  Mobile responsive layout
+  route_cache.pkl precomputed (compute live instead)
+
+================================================================
+CRITICAL HANDOFF ORDER
+================================================================
+
+Phase 2 — A generates:
+  bengaluru_graph.pkl          → give to B immediately (Phase 6 imports it)
+  bengaluru_zones.geojson      → give to C immediately (choropleth needs it)
+                                  also copy to frontend/public/
+  events_clean.csv + zone_id   → give to B immediately (Phase 3 feature engineering needs it)
+
+This is the single most important handoff.
+Everything in the project is blocked until Phase 2 outputs exist.
+
+================================================================
+RULES
+================================================================
+
+A never edits ml/src/clean_*.py, ml/src/train_model.py,
+  ml/src/feature_engineering.py, ml/src/inference.py,
+  ml/api/, or server/ or frontend/
+
+B never edits ml/src/build_graph.py, ml/src/snap_to_road.py,
+  ml/src/graph_utils.py, ml/src/congestion_propagation.py,
+  ml/src/route_engine.py, ml/src/event_simulator.py,
+  ml/src/resource_allocator.py, ml/src/replay_generator.py
+
+C never edits ml/ or server/
+
+API contract frozen after Phase 5.
+Any endpoint change needs agreement from all three.
+Submit on HackerEarth before Jun 21 11:59 PM IST.
+Submit early, resubmit as many times as needed before deadline.
+
+================================================================
+END OF WORKPLAN
+================================================================
+ENDOFFILE
