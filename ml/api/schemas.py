@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Literal
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -29,7 +29,7 @@ class ZoneProperties(BaseModel):
 
 
 class ZoneResponse(BaseModel):
-	type: str = Field("Feature", const=True)
+	type: Literal["Feature"] = "Feature"
 	geometry: GeoJSONGeometry
 	properties: ZoneProperties
 
@@ -69,4 +69,3 @@ class ReplaySnapshot(BaseModel):
 	timestamp: datetime
 	zone_scores: Dict[str, float]
 	progress_percent: float
-
