@@ -40,6 +40,7 @@ async def list_zones():
         props = feat.get("properties", {})
         raw_zone_id = props.get("KGISWardNo")
         zone_id = clean_zone_id(raw_zone_id)
+        zone_name = props.get("KGISWardName", "Unknown")
         score = baseline_scores.get(zone_id, 0.0)
         
         response_features.append(
@@ -51,6 +52,7 @@ async def list_zones():
                 ),
                 properties=ZoneProperties(
                     zone_id=zone_id,
+                    zone_name=zone_name,
                     baseline_score=score
                 )
             )

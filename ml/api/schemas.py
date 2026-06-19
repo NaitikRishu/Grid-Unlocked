@@ -25,6 +25,7 @@ class GeoJSONGeometry(BaseModel):
 
 class ZoneProperties(BaseModel):
 	zone_id: str
+	zone_name: str
 	baseline_score: float
 
 
