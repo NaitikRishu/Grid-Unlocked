@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import ZoneChoropleth from './ZoneChoropleth'
 import 'leaflet/dist/leaflet.css'
 
 const bengaluruCenter = [12.9716, 77.5946]
@@ -39,7 +40,7 @@ function BengaluruMap() {
       </div>
 
       <div className="map-frame">
-        <MapContainer center={bengaluruCenter} zoom={11} scrollWheelZoom className="leaflet-map">
+        <MapContainer center={bengaluruCenter} zoom={12} scrollWheelZoom className="leaflet-map">
           <TileLayer
             key={mapProvider} // Force re-render of TileLayer when provider changes
             attribution={attribution}
@@ -48,6 +49,7 @@ function BengaluruMap() {
               tileerror: handleTileError
             }}
           />
+          <ZoneChoropleth />
           <Marker position={bengaluruCenter}>
             <Popup>Grid Unlocked map shell is live and ready for zone/event layers.</Popup>
           </Marker>
