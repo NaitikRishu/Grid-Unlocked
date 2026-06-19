@@ -7,13 +7,14 @@ import os
 import pickle
 import osmnx as ox
 import geopandas as gpd
+import networkx as nx
 from shapely.geometry import Point
 
 # Global variables for caching spatial index of edges
 _edges_gdf_projected = None
 _projected_crs = 'EPSG:32643'  # UTM Zone 43N for Bengaluru
 
-def load_graph() -> ox.settings.MultiDiGraph:
+def load_graph() -> nx.MultiDiGraph:
     """Loads the Bengaluru road graph from the pickle file."""
     src_dir = os.path.dirname(os.path.abspath(__file__))
     ml_dir = os.path.dirname(src_dir)
