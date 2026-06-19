@@ -1,6 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useMap } from 'react-leaflet'
 import L from 'leaflet'
+import client from '../../api/client'
+
+// Bind Leaflet to window object so that leaflet.heat plugin can find it
+if (typeof window !== 'undefined') {
+  window.L = L
+}
 import 'leaflet.heat'
 
 const dummyViolations = [
@@ -16,15 +22,28 @@ const dummyViolations = [
 
 function ViolationHeatmap() {
   const map = useMap()
+  const [points, setPoints] = useState([])
 
   useEffect(() => {
-    if (!L.heatLayer) {
-      console.warn('L.heatLayer is not loaded on the global Leaflet object.')
-      return
-    }
+    client.get('/violations/heatmap')
+      .then((res) => {
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          setPoints(res.data)
+        } else {
+          setPoints(dummyViolations)
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch heatmap data, using dummy fallback:', err)
+        setPoints(dummyViolations)
+      })
+  }, [])
 
-    const points = dummyViolations.map((v) => [v.lat, v.lon, v.count / 20])
-    const heatLayer = L.heatLayer(points, {
+  useEffect(() => {
+    if (!L.heatLayer || points.length === 0) return
+
+    const heatPoints = points.map((p) => [p.lat, p.lon, p.count / 20])
+    const heatLayer = L.heatLayer(heatPoints, {
       radius: 25,
       blur: 15,
       maxZoom: 15,
@@ -43,7 +62,7 @@ function ViolationHeatmap() {
         map.removeLayer(heatLayer)
       }
     }
-  }, [map])
+  }, [map, points])
 
   return null
 }

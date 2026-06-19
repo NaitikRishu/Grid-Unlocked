@@ -1,29 +1,37 @@
 import { useEffect, useState } from 'react'
 import { GeoJSON } from 'react-leaflet'
+import client from '../../api/client'
 
-// Deterministic generator to provide consistent dummy scores [0, 100] for each ward
-const getDummyScore = (wardNo) => {
-  if (!wardNo) return 0
-  const num = parseInt(wardNo, 10) || 0
-  return (num * 17 + 23) % 101 // Pseudo-random but deterministic
-}
-
-function ZoneChoropleth() {
+function ZoneChoropleth({ customScores = null }) {
   const [geoJsonData, setGeoJsonData] = useState(null)
+  const [maxBaselineScore, setMaxBaselineScore] = useState(1)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/bengaluru_zones.geojson')
+    setLoading(true)
+    client.get('/zones')
       .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to fetch geojson: ${res.statusText}`)
+        if (res.data && Array.isArray(res.data)) {
+          // Find the maximum baseline score dynamically to scale metrics
+          const maxVal = res.data.reduce((acc, feat) => {
+            const val = feat.properties?.baseline_score || 0
+            return val > acc ? val : acc
+          }, 0)
+          setMaxBaselineScore(maxVal > 0 ? maxVal : 1)
+
+          const featureCollection = {
+            type: 'FeatureCollection',
+            features: res.data
+          }
+          setGeoJsonData(featureCollection)
+        } else {
+          console.warn('API returned non-array data for zones:', res.data)
         }
-        return res.json()
-      })
-      .then((data) => {
-        setGeoJsonData(data)
+        setLoading(false)
       })
       .catch((err) => {
-        console.error('Error loading bengaluru_zones.geojson:', err)
+        console.error('Error fetching zones from API:', err)
+        setLoading(false)
       })
   }, [])
 
@@ -33,45 +41,56 @@ function ZoneChoropleth() {
     return '#ef4444' // Red
   }
 
+  const getDisplayScore = (feature) => {
+    const zoneId = feature.properties?.zone_id || ''
+    const rawScore = (customScores && customScores[zoneId] !== undefined)
+      ? customScores[zoneId]
+      : (feature.properties?.baseline_score || 0)
+
+    // Normalize baseline scores to [0, 100] range for proper classification coloring.
+    // If it's a simulated custom score, it is already scaled [0, 100] by the engine.
+    return customScores ? rawScore : (rawScore / maxBaselineScore) * 100
+  }
+
   const getStyle = (feature) => {
-    const wardNo = feature.properties?.KGISWardNo || ''
-    const score = getDummyScore(wardNo)
+    const score = getDisplayScore(feature)
     return {
-      color: '#1a3630', // Dark border to match aesthetic
+      color: '#1a3630', // Dark green/teal border
       weight: 1.2,
       fillColor: getZoneColor(score),
       fillOpacity: 0.4
     }
   }
 
-  if (!geoJsonData) return null
+  if (loading || !geoJsonData) return null
 
   return (
     <GeoJSON
+      key={JSON.stringify(customScores) + '-' + maxBaselineScore} // Force re-render when scores or scaling updates
       data={geoJsonData}
       style={getStyle}
       onEachFeature={(feature, layer) => {
-        const wardName = feature.properties?.KGISWardName || 'Unknown Ward'
-        const wardNo = feature.properties?.KGISWardNo || ''
-        const score = getDummyScore(wardNo)
+        const zoneId = feature.properties?.zone_id || ''
+        const zoneName = feature.properties?.zone_name || 'Unknown Zone'
+        const score = getDisplayScore(feature)
 
         // Bind interactive elements
         layer.bindPopup(`
           <div style="font-family: inherit; color: #1e293b;">
-            <h4 style="margin: 0 0 4px; font-size: 0.95rem;">Ward ${wardNo}: ${wardName}</h4>
+            <h4 style="margin: 0 0 4px; font-size: 0.95rem;">${zoneName} (ID: ${zoneId})</h4>
             <p style="margin: 0; font-size: 0.85rem;">
-              <strong>Congestion Score:</strong> 
-              <span style="color: ${getZoneColor(score)}; font-weight: bold;">${score}/100</span>
+              <strong>Relative Congestion:</strong> 
+              <span style="color: ${getZoneColor(score)}; font-weight: bold;">${Math.round(score)}/100</span>
             </p>
           </div>
         `)
 
-        layer.bindTooltip(`Ward ${wardNo}: ${wardName} (Score: ${score})`, {
+        layer.bindTooltip(`${zoneName} (Score: ${Math.round(score)})`, {
           sticky: true,
           direction: 'auto'
         })
 
-        // Interactive mouseover effects
+        // Interactive mouseover highlights
         layer.on({
           mouseover: (e) => {
             const l = e.target
