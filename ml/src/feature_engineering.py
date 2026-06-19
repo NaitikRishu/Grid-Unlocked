@@ -124,7 +124,7 @@ def main():
         
     print("Running Validations...")
     assert final_df["event_id"].duplicated().sum() == 0, "Duplicate event_id found"
-    assert len(final_df) == 8136, f"Row count mismatch, expected 8136, got {len(final_df)}"
+    assert len(final_df) == len(events), f"Row count mismatch, expected {len(events)}, got {len(final_df)}"
     assert (final_df["congestion_score"] < 0).sum() == 0, "Negative congestion_score found"
     assert (final_df["congestion_score"] > 100).sum() == 0, "congestion_score > 100 found"
     assert set(final_df["high_impact"].unique()).issubset({0, 1}), "high_impact has values other than 0, 1"
