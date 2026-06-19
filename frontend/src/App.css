@@ -141,11 +141,83 @@
   overflow: hidden;
   border: 1px solid rgba(152, 198, 186, 0.15);
   min-height: 560px;
+  position: relative;
 }
 
 .leaflet-map {
   height: 560px;
   width: 100%;
+  z-index: 1;
+}
+
+/* Floating overlay map controls */
+.map-overlay-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(9, 22, 20, 0.85);
+  border: 1px solid rgba(152, 198, 186, 0.25);
+  border-radius: 12px;
+  padding: 12px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+}
+
+.control-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #e6f7f1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.control-toggle input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #38d39f;
+}
+
+/* Custom glowing event pin */
+.custom-event-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pin-core {
+  width: 10px;
+  height: 10px;
+  background-color: #ef4444; /* red */
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.pin-pulse {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background-color: rgba(239, 68, 68, 0.4);
+  border-radius: 50%;
+  animation: pulse 1.8s infinite ease-out;
+  z-index: 1;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 
 @media (max-width: 980px) {
