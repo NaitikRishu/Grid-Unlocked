@@ -36,10 +36,26 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
 
+def clean_zone_id(zone_id):
+    """Converts zone ID to string format consistently, avoiding rstrip('.0') collision bugs."""
+    if pd.isna(zone_id) or str(zone_id).strip().lower() in ('nan', 'none', ''):
+        return ""
+    try:
+        val = float(zone_id)
+        if pd.isna(val):
+            return ""
+        if val.is_integer():
+            return str(int(val))
+        return str(val)
+    except (ValueError, TypeError):
+        return str(zone_id).strip()
+
 def get_zone_centroid(zone_id, zones_gdf):
     """Returns the centroid (lat, lon) coordinates of the zone."""
-    zone_id_str = str(zone_id).strip().rstrip('.0')
-    match = zones_gdf[zones_gdf['KGISWardNo'].astype(str).str.strip().str.rstrip('.0') == zone_id_str]
+    zone_id_str = clean_zone_id(zone_id)
+    # Clean the KGISWardNo column elements dynamically to match clean format
+    kgis_cleaned = zones_gdf['KGISWardNo'].apply(clean_zone_id)
+    match = zones_gdf[kgis_cleaned == zone_id_str]
     if match.empty:
         return None
     centroid = match.geometry.centroid.iloc[0]
@@ -58,7 +74,7 @@ def precompute_zone_distances(G, zones_gdf, cache_path):
     nearest_node_ids = ox.nearest_nodes(G, X=lons, Y=lats)
     
     for idx, row in zones_gdf.iterrows():
-        zone_id = str(row['KGISWardNo']).strip().rstrip('.0')
+        zone_id = clean_zone_id(row['KGISWardNo'])
         zone_nodes[zone_id] = nearest_node_ids[idx]
         centroid = row.geometry.centroid
         zone_coords[zone_id] = (centroid.y, centroid.x)
@@ -108,8 +124,8 @@ def load_distances(cache_path):
 def graph_distance_km(zone_id_1, zone_id_2, G, zones_gdf, cache_path):
     """Looks up graph distance in km, falling back to Haversine if not cached/found."""
     dists = load_distances(cache_path)
-    z1 = str(zone_id_1).strip().rstrip('.0')
-    z2 = str(zone_id_2).strip().rstrip('.0')
+    z1 = clean_zone_id(zone_id_1)
+    z2 = clean_zone_id(zone_id_2)
     
     if dists and (z1, z2) in dists:
         return dists[(z1, z2)]
@@ -124,11 +140,11 @@ def graph_distance_km(zone_id_1, zone_id_2, G, zones_gdf, cache_path):
 def propagate_scores(epicentre_zone_id, base_score, G, zones_gdf, cache_path, lambda_decay=0.3):
     """Propagates a congestion score from an epicenter zone to all other zones."""
     scores = {}
-    z1 = str(epicentre_zone_id).strip().rstrip('.0')
+    z1 = clean_zone_id(epicentre_zone_id)
     base_score_float = float(base_score)
     
     for idx, row in zones_gdf.iterrows():
-        zone_id = str(row['KGISWardNo']).strip().rstrip('.0')
+        zone_id = clean_zone_id(row['KGISWardNo'])
         if zone_id == z1:
             scores[zone_id] = base_score_float
         else:
@@ -142,9 +158,9 @@ def aggregate_zone_scores(active_events_list, G, zones_gdf, cache_path, lambda_d
     scores = defaultdict(float)
     
     for event in active_events_list:
-        event_zone = str(event.get("zone_id", "")).strip().rstrip('.0')
+        event_zone = clean_zone_id(event.get("zone_id", ""))
         base_score = float(event.get("congestion_score", 0.0))
-        if not event_zone or event_zone == "nan":
+        if not event_zone:
             continue
             
         propagated = propagate_scores(event_zone, base_score, G, zones_gdf, cache_path, lambda_decay)
@@ -156,7 +172,7 @@ def aggregate_zone_scores(active_events_list, G, zones_gdf, cache_path, lambda_d
     
     # Ensure all zones are represented
     for idx, row in zones_gdf.iterrows():
-        z_id = str(row['KGISWardNo']).strip().rstrip('.0')
+        z_id = clean_zone_id(row['KGISWardNo'])
         if z_id not in capped:
             capped[z_id] = 0.0
             
@@ -209,7 +225,7 @@ def main():
         if pd.isna(ev_zone) or str(ev_zone).strip() == "nan" or not str(ev_zone).strip():
             # Create 0.0 scores for all zones
             for _, z_row in zones_gdf.iterrows():
-                z_id = str(z_row['KGISWardNo']).strip().rstrip('.0')
+                z_id = clean_zone_id(z_row['KGISWardNo'])
                 zone_scores_rows.append({
                     "event_id": ev_id,
                     "zone_id": z_id,
