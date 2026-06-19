@@ -1,8 +1,10 @@
-import { useState } from 'react'
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import { useState, useEffect } from 'react'
+import { MapContainer, TileLayer } from 'react-leaflet'
 import ZoneChoropleth from './ZoneChoropleth'
 import EventPin from './EventPin'
 import ViolationHeatmap from './ViolationHeatmap'
+import DiversionRoutes from './DiversionRoutes'
+import client from '../../api/client'
 import 'leaflet/dist/leaflet.css'
 
 const bengaluruCenter = [12.9716, 77.5946]
@@ -11,11 +13,28 @@ const bengaluruCenter = [12.9716, 77.5946]
 const MAPMYINDIA_REST_API_KEY = 
   import.meta.env.VITE_MAPMYINDIA_REST_API_KEY || '5fcffa1bb0b1d5af90af3d9f917ec098'
 
-function BengaluruMap() {
+function BengaluruMap({ selectedEventId, onSelectEvent }) {
   const [mapProvider, setMapProvider] = useState('mapmyindia')
   const [showZones, setShowZones] = useState(true)
   const [showEvents, setShowEvents] = useState(true)
   const [showViolations, setShowViolations] = useState(false)
+  const [selectedRoutes, setSelectedRoutes] = useState(null)
+
+  // React to selectedEventId changes from map or sidebar selections
+  useEffect(() => {
+    if (selectedEventId) {
+      client.get(`/routes/${selectedEventId}`)
+        .then((res) => {
+          setSelectedRoutes(res.data)
+        })
+        .catch((err) => {
+          console.warn(`Failed to fetch alternate routes for event ${selectedEventId}:`, err)
+          setSelectedRoutes(null)
+        })
+    } else {
+      setSelectedRoutes(null)
+    }
+  }, [selectedEventId])
 
   const tileUrl = mapProvider === 'mapmyindia'
     ? `https://apis.mapmyindia.com/advancedmaps/v1/${MAPMYINDIA_REST_API_KEY}/tile/{z}/{x}/{y}.png`
@@ -84,11 +103,9 @@ function BengaluruMap() {
             }}
           />
           {showZones && <ZoneChoropleth />}
-          {showEvents && <EventPin />}
+          {showEvents && <EventPin onEventClick={onSelectEvent} />}
           {showViolations && <ViolationHeatmap />}
-          <Marker position={bengaluruCenter}>
-            <Popup>Grid Unlocked map shell is live and ready for zone/event layers.</Popup>
-          </Marker>
+          {selectedRoutes && <DiversionRoutes routes={selectedRoutes} />}
         </MapContainer>
       </div>
     </div>

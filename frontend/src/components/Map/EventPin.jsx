@@ -50,7 +50,7 @@ const dummyEvents = [
   }
 ]
 
-function EventPin() {
+function EventPin({ onEventClick }) {
   const [events, setEvents] = useState([])
 
   useEffect(() => {
@@ -75,6 +75,13 @@ function EventPin() {
           key={event.id} 
           position={[event.lat, event.lon]} 
           icon={eventIcon}
+          eventHandlers={{
+            click: () => {
+              if (onEventClick) {
+                onEventClick(event.id)
+              }
+            }
+          }}
         >
           <Popup className="event-popup">
             <div className="popup-content" style={{ fontFamily: 'inherit', color: '#1e293b' }}>

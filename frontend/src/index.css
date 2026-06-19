@@ -1,11 +1,12 @@
 :root {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Outfit', 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #e9f4ef;
+  color: #f4f4f5;
   background:
-    radial-gradient(circle at top left, rgba(45, 153, 133, 0.28), transparent 28%),
-    linear-gradient(180deg, #081412 0%, #102420 55%, #0d1918 100%);
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.06), transparent 50%),
+    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.03), transparent 50%),
+    #09090b;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
