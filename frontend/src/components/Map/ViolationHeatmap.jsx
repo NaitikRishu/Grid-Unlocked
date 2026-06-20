@@ -9,16 +9,25 @@ if (typeof window !== 'undefined') {
 }
 import 'leaflet.heat'
 
-const dummyViolations = [
-  { lat: 12.9716, lon: 77.5946, count: 12 },
-  { lat: 12.9745, lon: 77.5901, count: 8 },
-  { lat: 12.9802, lon: 77.5854, count: 15 },
-  { lat: 12.9654, lon: 77.6012, count: 9 },
-  { lat: 12.9582, lon: 77.5934, count: 14 },
-  { lat: 12.9678, lon: 77.5799, count: 7 },
-  { lat: 12.9892, lon: 77.5982, count: 11 },
-  { lat: 12.9733, lon: 77.6110, count: 18 }
-]
+// Generate a dense, realistic fallback set of violations clustered around Bengaluru
+const generateRealisticDummyViolations = () => {
+  const points = []
+  const centerLat = 12.9716
+  const centerLon = 77.5946
+  
+  // Seed random generator or use pseudo-random offsets for consistent look
+  for (let i = 0; i < 180; i++) {
+    const angle = (i * 137.5) * (Math.PI / 180) // golden angle distribution
+    const radius = 0.005 + (Math.sqrt(i) * 0.006) // spiral distribution
+    const lat = centerLat + Math.sin(angle) * radius + (Math.random() * 0.008 - 0.004)
+    const lon = centerLon + Math.cos(angle) * radius + (Math.random() * 0.008 - 0.004)
+    const count = Math.floor(Math.sin(i / 10) * 40) + 60 // count between 20 and 100
+    points.push({ lat, lon, count })
+  }
+  return points
+}
+
+const dummyViolations = generateRealisticDummyViolations()
 
 function ViolationHeatmap() {
   const map = useMap()
@@ -40,13 +49,19 @@ function ViolationHeatmap() {
   }, [])
 
   useEffect(() => {
-    if (!L.heatLayer || points.length === 0) return
+    // Reference window.L to bypass ES Module hoisting issues in Vite
+    const leafletInstance = window.L || L
+    if (!leafletInstance || !leafletInstance.heatLayer || points.length === 0) {
+      console.warn('Leaflet heatLayer plugin is not loaded yet.')
+      return
+    }
 
-    const heatPoints = points.map((p) => [p.lat, p.lon, p.count / 20])
-    const heatLayer = L.heatLayer(heatPoints, {
+    const heatPoints = points.map((p) => [p.lat, p.lon, p.count / 40])
+    const heatLayer = leafletInstance.heatLayer(heatPoints, {
       radius: 25,
       blur: 15,
-      maxZoom: 15,
+      maxZoom: 13,
+      max: 1.0,
       gradient: {
         0.4: '#3b82f6', // blue
         0.6: '#10b981', // emerald

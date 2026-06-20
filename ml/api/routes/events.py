@@ -48,8 +48,8 @@ async def list_events():
 @router.get("/{event_id}", response_model=Dict[str, Any], tags=["events"])
 async def get_event(event_id: str):
     """Return a single event by id and its prediction."""
-    if events_df.empty or fm_df.empty:
-        raise HTTPException(status_code=500, detail="Data not loaded")
+    if events_df.empty:
+        raise HTTPException(status_code=500, detail="Events data not loaded")
         
     event_row = events_df[events_df["id"] == event_id]
     if event_row.empty:
@@ -57,11 +57,17 @@ async def get_event(event_id: str):
         
     e = event_row.iloc[0]
     
-    fm_row = fm_df[fm_df["event_id"] == event_id]
-    if fm_row.empty:
-        raise HTTPException(status_code=404, detail="Features not found for event")
-        
-    f = fm_row.iloc[0].to_dict()
+    if fm_df.empty or event_id not in fm_df["event_id"].values:
+        f = e.to_dict()
+        f["event_id"] = f.get("id")
+    else:
+        fm_row = fm_df[fm_df["event_id"] == event_id]
+        if fm_row.empty:
+            f = e.to_dict()
+            f["event_id"] = f.get("id")
+        else:
+            f = fm_row.iloc[0].to_dict()
+            
     prediction = predict_event(f)
     
     event_obj = {
