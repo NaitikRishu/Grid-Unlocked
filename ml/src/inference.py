@@ -54,4 +54,33 @@ def predict_event(event_dict):
     }
 
 def predict_batch(events_list):
-    return [predict_event(e) for e in events_list]
+    if not events_list:
+        return []
+    load_models()
+    
+    df = pd.DataFrame(events_list)
+    for col in _feature_cols:
+        if col not in df.columns:
+            df[col] = 0
+            
+    X = df[_feature_cols]
+    
+    scores = _regressor.predict(X)
+    scores = np.clip(scores, 0, 100)
+    
+    is_high_impacts = _classifier.predict(X)
+    probas = _classifier.predict_proba(X)
+    
+    results = []
+    for i in range(len(events_list)):
+        score = float(scores[i])
+        is_high_impact = bool(is_high_impacts[i])
+        proba = probas[i]
+        high_impact_prob = float(proba[1]) if len(proba) > 1 else float(is_high_impact)
+        
+        results.append({
+            "congestion_score": score,
+            "high_impact": is_high_impact,
+            "high_impact_probability": high_impact_prob
+        })
+    return results
