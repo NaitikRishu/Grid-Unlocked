@@ -161,7 +161,7 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 320px minmax(0, 1fr) 320px;
   gap: 18px;
 }
 
@@ -491,6 +491,12 @@
 
 .refresh-btn:hover {
   color: #a1a1aa;
+}
+
+@media (max-width: 1200px) {
+  .workspace {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 980px) {

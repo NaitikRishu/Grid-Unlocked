@@ -13,7 +13,10 @@ const bengaluruCenter = [12.9716, 77.5946]
 const MAPMYINDIA_REST_API_KEY = 
   import.meta.env.VITE_MAPMYINDIA_REST_API_KEY || '5fcffa1bb0b1d5af90af3d9f917ec098'
 
+import { useAppStore } from '../../store/appStore'
+
 function BengaluruMap({ selectedEventId, onSelectEvent }) {
+  const { simulationActive, simulationRoutes, simulationDelaySaved } = useAppStore()
   const [mapProvider, setMapProvider] = useState('mapmyindia')
   const [showZones, setShowZones] = useState(true)
   const [showEvents, setShowEvents] = useState(true)
@@ -93,6 +96,30 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
           </label>
         </div>
 
+        {/* Dynamic Simulation Banner Overlay */}
+        {simulationActive && (
+          <div 
+            className="map-overlay-controls" 
+            style={{ 
+              top: '16px', 
+              left: '16px', 
+              right: 'auto', 
+              borderColor: 'rgba(255,255,255,0.25)', 
+              background: 'rgba(20, 20, 23, 0.95)' 
+            }}
+          >
+            <p className="panel__label" style={{ margin: '0 0 4px', color: '#ffffff', textShadow: '0 0 10px rgba(255,255,255,0.3)' }}>
+              Simulation Mode
+            </p>
+            <h3 style={{ margin: '0', fontSize: '1rem', color: '#ffffff', fontWeight: '800' }}>
+              Saves {Math.round(simulationDelaySaved)} Minutes
+            </h3>
+            <p style={{ margin: '4px 0 0', fontSize: '0.74rem', color: '#a1a1aa' }}>
+              Optimized resource routing applied.
+            </p>
+          </div>
+        )}
+
         <MapContainer center={bengaluruCenter} zoom={12} scrollWheelZoom className="leaflet-map">
           <TileLayer
             key={mapProvider} // Force re-render of TileLayer when provider changes
@@ -105,7 +132,11 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
           {showZones && <ZoneChoropleth />}
           {showEvents && <EventPin onEventClick={onSelectEvent} />}
           {showViolations && <ViolationHeatmap />}
-          {selectedRoutes && <DiversionRoutes routes={selectedRoutes} />}
+          {simulationActive ? (
+            simulationRoutes && <DiversionRoutes routes={simulationRoutes} />
+          ) : (
+            selectedRoutes && <DiversionRoutes routes={selectedRoutes} />
+          )}
         </MapContainer>
       </div>
     </div>
