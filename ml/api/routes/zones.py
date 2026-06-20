@@ -24,7 +24,7 @@ if os.path.exists(zone_scores_path):
     baseline_scores = {clean_zone_id(k): float(v) for k, v in avg_scores.items()}
     print(f"Loaded baseline scores for {len(baseline_scores)} zones.")
 
-@router.get("/", response_model=List[ZoneResponse], tags=["zones"])
+@router.get("", response_model=List[ZoneResponse], tags=["zones"])
 async def list_zones():
     """Return a list of zones as GeoJSON Features with baseline scores."""
     if not os.path.exists(zones_geojson_path):

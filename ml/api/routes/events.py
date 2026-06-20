@@ -22,7 +22,7 @@ if os.path.exists(events_path):
 if os.path.exists(fm_path):
     fm_df = pd.read_csv(fm_path)
 
-@router.get("/", response_model=List[EventResponse], tags=["events"])
+@router.get("", response_model=List[EventResponse], tags=["events"])
 async def list_events():
     """Return a list of events."""
     if events_df.empty:
