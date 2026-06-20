@@ -3,10 +3,6 @@ import { useMap } from 'react-leaflet'
 import L from 'leaflet'
 import client from '../../api/client'
 
-// Bind Leaflet to window object so that leaflet.heat plugin can find it
-if (typeof window !== 'undefined') {
-  window.L = L
-}
 import 'leaflet.heat'
 
 // Generate a dense, realistic fallback set of violations clustered around Bengaluru
@@ -51,17 +47,22 @@ function ViolationHeatmap() {
   useEffect(() => {
     // Reference window.L to bypass ES Module hoisting issues in Vite
     const leafletInstance = window.L || L
-    if (!leafletInstance || !leafletInstance.heatLayer || points.length === 0) {
+    if (!leafletInstance || !leafletInstance.heatLayer) {
       console.warn('Leaflet heatLayer plugin is not loaded yet.')
       return
     }
 
-    const heatPoints = points.map((p) => [p.lat, p.lon, p.count / 40])
+    if (points.length === 0) {
+      return
+    }
+
+    const maxVal = Math.max(...points.map((p) => p.count), 1)
+    const heatPoints = points.map((p) => [p.lat, p.lon, p.count])
     const heatLayer = leafletInstance.heatLayer(heatPoints, {
       radius: 25,
       blur: 15,
       maxZoom: 13,
-      max: 1.0,
+      max: maxVal,
       gradient: {
         0.4: '#3b82f6', // blue
         0.6: '#10b981', // emerald

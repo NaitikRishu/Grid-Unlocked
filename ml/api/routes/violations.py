@@ -25,18 +25,11 @@ def _build_heatmap():
     df = pd.read_csv(violations_path)
     # Drop rows with missing coordinates
     df = df.dropna(subset=["latitude", "longitude"])
-    # Group by junction_name if available, else by rounded lat/lon
-    if "junction_name" in df.columns:
-        grouped = df.dropna(subset=["junction_name"]).groupby("junction_name").agg(
-            lat=("latitude", "first"),
-            lon=("longitude", "first"),
-            count=("junction_name", "size"),
-        ).reset_index(drop=True)
-    else:
-        df["lat_r"] = df["latitude"].round(4)
-        df["lon_r"] = df["longitude"].round(4)
-        grouped = df.groupby(["lat_r", "lon_r"]).size().reset_index(name="count")
-        grouped = grouped.rename(columns={"lat_r": "lat", "lon_r": "lon"})
+    # Group by rounded latitude and longitude to preserve unique coordinates
+    df["lat_r"] = df["latitude"].round(4)
+    df["lon_r"] = df["longitude"].round(4)
+    grouped = df.groupby(["lat_r", "lon_r"]).size().reset_index(name="count")
+    grouped = grouped.rename(columns={"lat_r": "lat", "lon_r": "lon"})
     _heatmap_cache = [
         ViolationPoint(lat=float(r["lat"]), lon=float(r["lon"]), count=int(r["count"]))
         for _, r in grouped.iterrows()

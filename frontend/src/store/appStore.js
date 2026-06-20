@@ -10,10 +10,13 @@ export const useAppStore = create((set) => ({
   predictedDuration: 0,
   highImpact: false,
   resourceAllocation: null,    // { zone_id: { police, barricades } }
+  baselineScores: {},          // { zone_id: score }
+
+  setBaselineScores: (scores) => set({ baselineScores: scores }),
 
   setSimulationResults: (data) => set({
     simulationScores: data.zone_scores || {},
-    simulationRoutes: data.alternate_routes || null,
+    simulationRoutes: data.alternate_routes ? { type: 'FeatureCollection', features: data.alternate_routes } : null,
     simulationDelaySaved: data.delay_saved_minutes || 0,
     predictedDuration: data.predicted_duration_minutes || 0,
     highImpact: data.high_impact || false,

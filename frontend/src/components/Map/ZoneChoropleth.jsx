@@ -4,7 +4,7 @@ import client from '../../api/client'
 import { useAppStore } from '../../store/appStore'
 
 function ZoneChoropleth({ customScores: propCustomScores = null }) {
-  const { simulationScores, simulationActive } = useAppStore()
+  const { simulationScores, simulationActive, setBaselineScores } = useAppStore()
   const customScores = propCustomScores || (simulationActive ? simulationScores : null)
   const [geoJsonData, setGeoJsonData] = useState(null)
   const [maxBaselineScore, setMaxBaselineScore] = useState(1)
@@ -15,6 +15,16 @@ function ZoneChoropleth({ customScores: propCustomScores = null }) {
     client.get('/zones')
       .then((res) => {
         if (res.data && Array.isArray(res.data)) {
+          // Store baseline scores in Zustand
+          const baseScoresObj = {}
+          res.data.forEach((feat) => {
+            const zId = feat.properties?.zone_id
+            if (zId) {
+              baseScoresObj[zId] = feat.properties?.baseline_score || 0
+            }
+          })
+          setBaselineScores(baseScoresObj)
+
           // Find the maximum baseline score dynamically to scale metrics
           const maxVal = res.data.reduce((acc, feat) => {
             const val = feat.properties?.baseline_score || 0
@@ -50,9 +60,13 @@ function ZoneChoropleth({ customScores: propCustomScores = null }) {
       ? customScores[zoneId]
       : (feature.properties?.baseline_score || 0)
 
-    // Normalize baseline scores to [0, 100] range for proper classification coloring.
-    // If it's a simulated custom score, it is already scaled [0, 100] by the engine.
-    return customScores ? rawScore : (rawScore / maxBaselineScore) * 100
+    if (customScores) {
+      // Find the maximum score in customScores dynamically to scale it to [0, 100]
+      const maxCustom = Math.max(...Object.values(customScores).map(Number), 1)
+      return (rawScore / maxCustom) * 100
+    } else {
+      return (rawScore / maxBaselineScore) * 100
+    }
   }
 
   const getStyle = (feature) => {
