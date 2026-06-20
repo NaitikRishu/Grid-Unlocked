@@ -4,11 +4,15 @@ import Header from './components/Layout/Header'
 import Sidebar from './components/Layout/Sidebar'
 import BengaluruMap from './components/Map/BengaluruMap'
 import WhatIfPanel from './components/Controls/WhatIfPanel'
+import DelayChart from './components/Analytics/DelayChart'
+import ZoneRankTable from './components/Analytics/ZoneRankTable'
+import PostEventAccuracy from './components/Analytics/PostEventAccuracy'
 import './App.css'
 
 function App() {
   const [selectedEventId, setSelectedEventId] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const [activeTab, setActiveTab] = useState('operations')
   const [backendState, setBackendState] = useState({
     loading: true,
     ok: false,
@@ -93,13 +97,51 @@ function App() {
         </article>
       </section>
 
-      <section className="workspace">
-        <Sidebar selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
-        <BengaluruMap selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
-        <aside className="sidebar">
-          <WhatIfPanel selectedEvent={selectedEvent} />
-        </aside>
+      {/* Tabs Navigation Switcher */}
+      <section style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
+        <button 
+          onClick={() => setActiveTab('operations')}
+          className="chip"
+          style={{ 
+            background: activeTab === 'operations' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(9, 9, 11, 0.7)',
+            borderColor: activeTab === 'operations' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
+            cursor: 'pointer',
+            fontWeight: '600'
+          }}
+        >
+          🚦 Live Operations Map
+        </button>
+        <button 
+          onClick={() => setActiveTab('analytics')}
+          className="chip"
+          style={{ 
+            background: activeTab === 'analytics' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(9, 9, 11, 0.7)',
+            borderColor: activeTab === 'analytics' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
+            cursor: 'pointer',
+            fontWeight: '600'
+          }}
+        >
+          📊 Analytics Dashboard
+        </button>
       </section>
+
+      {activeTab === 'operations' ? (
+        <section className="workspace">
+          <Sidebar selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
+          <BengaluruMap selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
+          <aside className="sidebar">
+            <WhatIfPanel selectedEvent={selectedEvent} />
+          </aside>
+        </section>
+      ) : (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px' }}>
+            <DelayChart />
+            <ZoneRankTable />
+          </div>
+          <PostEventAccuracy />
+        </section>
+      )}
     </main>
   )
 }
