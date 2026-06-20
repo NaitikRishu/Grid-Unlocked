@@ -1,4 +1,5 @@
 import os
+import json
 import pandas as pd
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
@@ -7,14 +8,17 @@ import math
 from ml.src import inference
 
 router = APIRouter()
+replay_router = APIRouter()
 
 src_dir = os.path.dirname(os.path.abspath(__file__))
 ml_dir = os.path.dirname(os.path.dirname(src_dir))
 events_path = os.path.join(ml_dir, "data", "processed", "events_clean.csv")
 fm_path = os.path.join(ml_dir, "data", "processed", "feature_matrix.csv")
+replay_path = os.path.join(ml_dir, "data", "processed", "replay_data.json")
 
 _events_df = None
 _fm_df = None
+_replay_data = None
 
 def load_data():
     global _events_df, _fm_df
@@ -79,7 +83,6 @@ async def post_event_analytics() -> List[Dict[str, Any]]:
                 "actual_duration": float(row["event_duration_minutes"])
             })
             
-        # Batch predict
         predictions = inference.predict_batch(inference_list)
         
         results = []
@@ -118,7 +121,6 @@ async def zone_summary() -> List[Dict[str, Any]]:
         if events_df.empty:
             return []
             
-        # Group by zone
         valid_zones = events_df.dropna(subset=["zone_id", "event_type"])
         if valid_zones.empty:
             return []
@@ -130,14 +132,12 @@ async def zone_summary() -> List[Dict[str, Any]]:
             event_count = len(group)
             top_event_type = group["event_type"].mode().iloc[0] if not group["event_type"].mode().empty else "Unknown"
             
-            # calculate average duration
             durations = group["event_duration_minutes"].dropna()
             avg_duration = durations.mean() if not durations.empty else 0.0
             
             if math.isnan(avg_duration) or math.isinf(avg_duration):
                 avg_duration = 0.0
                 
-            # No violations dataset available in the requirements list to load, returning 0
             avg_violations_7d = 0.0
             
             results.append({

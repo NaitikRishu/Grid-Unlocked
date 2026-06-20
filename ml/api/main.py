@@ -33,6 +33,7 @@ def create_app() -> FastAPI:
     app.include_router(violations_router.router, prefix="/violations", tags=["violations"])
     app.include_router(routes_router.router, prefix="/routes", tags=["routes"])
     app.include_router(analytics_router.router, prefix="/analytics", tags=["analytics"])
+    app.include_router(analytics_router.replay_router, prefix="/api/replay", tags=["replay"])
 
     @app.get("/ping")
     async def ping():
