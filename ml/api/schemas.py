@@ -56,7 +56,7 @@ class SimulateResponse(BaseModel):
 	predicted_duration_minutes: int
 	high_impact: bool
 	delay_saved_minutes: int
-	alternate_routes: List[ZoneResponse]
+	alternate_routes: List[Any]
 	resource_allocation: Dict[str, ResourceAllocationItem]
 
 
