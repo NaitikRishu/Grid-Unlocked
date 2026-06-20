@@ -28,7 +28,10 @@ async def list_events():
     if events_df.empty:
         return []
     
-    records = events_df.head(200).to_dict(orient="records")
+    # Drop rows with missing critical fields before parsing
+    valid_events = events_df.dropna(subset=["id", "start_datetime", "latitude", "longitude"]).head(200)
+    records = valid_events.to_dict(orient="records")
+    
     resp = []
     for r in records:
         resp.append({
