@@ -39,3 +39,5 @@ build/
 # Large generated geospatial files
 ml/data/geo/bengaluru_graph.pkl
 ml/data/geo/bengaluru_roads.geojson
+ml/data/processed/*.json
+ml/data/processed/*.pkl

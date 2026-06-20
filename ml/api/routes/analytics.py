@@ -36,38 +36,12 @@ def load_data():
             
     return _events_df, _fm_df
 
-def load_replay_data():
-    global _replay_data
-    if _replay_data is None:
-        if not os.path.exists(replay_path):
-            raise FileNotFoundError("Replay data not generated")
-        try:
-            with open(replay_path, "r") as f:
-                _replay_data = json.load(f)
-        except Exception as e:
-            raise ValueError(f"Malformed JSON: {str(e)}")
-    return _replay_data
-
-
-@replay_router.get("/{event_id}", tags=["replay"])
-async def get_replay(event_id: str) -> List[Dict[str, Any]]:
-    """Return replay snapshots for a given event ID."""
-    try:
-        try:
-            data = load_replay_data()
-        except FileNotFoundError:
-            raise HTTPException(status_code=404, detail="Replay data not generated")
-        except ValueError as e:
-            raise HTTPException(status_code=500, detail=str(e))
-            
-        if event_id in data:
-            return data[event_id]
-        return []
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+# Pre-load ML models on startup
+try:
+    print("Pre-loading ML models for analytics router...")
+    inference.load_models()
+except Exception as e:
+    print(f"Warning: Failed to pre-load ML models: {e}")
 
 @router.get("/post-event", tags=["analytics"])
 async def post_event_analytics() -> List[Dict[str, Any]]:
@@ -77,11 +51,18 @@ async def post_event_analytics() -> List[Dict[str, Any]]:
         if events_df.empty:
             return []
             
-        valid_events = events_df.dropna(subset=["id", "event_duration_minutes", "event_type", "zone_id"])
+        # We need actual_duration, so drop rows where event_duration_minutes is NaN
+        valid_events = events_df.dropna(subset=["id", "event_duration_minutes", "event_type", "zone_id"]).head(200)
         
         if valid_events.empty:
             return []
             
+        # Convert fm_df to a dictionary indexed by event_id for O(1) lookups
+        fm_dict = {}
+        if not fm_df.empty and "event_id" in fm_df.columns:
+            fm_dict = fm_df.set_index("event_id").to_dict(orient="index")
+            
+        # Prepare list for inference
         inference_list = []
         event_meta = []
         
@@ -90,10 +71,9 @@ async def post_event_analytics() -> List[Dict[str, Any]]:
             e_dict = row.to_dict()
             e_dict["event_id"] = event_id
             
-            if not fm_df.empty and event_id in fm_df["event_id"].values:
-                fm_row = fm_df[fm_df["event_id"] == event_id]
-                if not fm_row.empty:
-                    e_dict.update(fm_row.iloc[0].to_dict())
+            # Use feature matrix if available
+            if event_id in fm_dict:
+                e_dict.update(fm_dict[event_id])
             
             inference_list.append(e_dict)
             event_meta.append({
