@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ml.api.schemas import SimulateRequest, SimulateResponse, ZoneResponse, ResourceAllocationItem
+from ml.api.schemas import SimulateRequest, SimulateResponse
 
 router = APIRouter()
 

@@ -6,6 +6,7 @@ import BengaluruMap from './components/Map/BengaluruMap'
 import './App.css'
 
 function App() {
+  const [selectedEventId, setSelectedEventId] = useState(null)
   const [backendState, setBackendState] = useState({
     loading: true,
     ok: false,
@@ -57,26 +58,24 @@ function App() {
 
         <article className="status-card">
           <p className="panel__label">Data status</p>
-          <h2>Phase 1 outputs present</h2>
+          <h2>Phase 5 outputs present</h2>
           <p className="panel__text">
-            Cleaned events and violations CSVs are in the repo, so the project can build
-            forward from real data instead of placeholders.
+            Cleaned events, BBMP zones, and precomputed Dijkstra distance matrices are loaded and ready.
           </p>
         </article>
 
         <article className="status-card">
           <p className="panel__label">Map provider</p>
-          <h2>MapmyIndia path prepared</h2>
+          <h2>OpenStreetMap base active</h2>
           <p className="panel__text">
-            The current shell uses an OSM fallback tile layer while the MapmyIndia tile
-            and snap-to-road implementation is finalized.
+            Operating on local relative coordinate grids with interactive route planning overlays.
           </p>
         </article>
       </section>
 
       <section className="workspace">
-        <Sidebar />
-        <BengaluruMap />
+        <Sidebar selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
+        <BengaluruMap selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
       </section>
     </main>
   )
