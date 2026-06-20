@@ -32,6 +32,13 @@ def load_data():
             
     return _events_df, _fm_df
 
+# Pre-load ML models on startup
+try:
+    print("Pre-loading ML models for analytics router...")
+    inference.load_models()
+except Exception as e:
+    print(f"Warning: Failed to pre-load ML models: {e}")
+
 @router.get("/post-event", tags=["analytics"])
 async def post_event_analytics() -> List[Dict[str, Any]]:
     """Return post-event analytics summary."""
@@ -41,10 +48,15 @@ async def post_event_analytics() -> List[Dict[str, Any]]:
             return []
             
         # We need actual_duration, so drop rows where event_duration_minutes is NaN
-        valid_events = events_df.dropna(subset=["id", "event_duration_minutes", "event_type", "zone_id"])
+        valid_events = events_df.dropna(subset=["id", "event_duration_minutes", "event_type", "zone_id"]).head(200)
         
         if valid_events.empty:
             return []
+            
+        # Convert fm_df to a dictionary indexed by event_id for O(1) lookups
+        fm_dict = {}
+        if not fm_df.empty and "event_id" in fm_df.columns:
+            fm_dict = fm_df.set_index("event_id").to_dict(orient="index")
             
         # Prepare list for inference
         inference_list = []
@@ -56,10 +68,8 @@ async def post_event_analytics() -> List[Dict[str, Any]]:
             e_dict["event_id"] = event_id
             
             # Use feature matrix if available
-            if not fm_df.empty and event_id in fm_df["event_id"].values:
-                fm_row = fm_df[fm_df["event_id"] == event_id]
-                if not fm_row.empty:
-                    e_dict.update(fm_row.iloc[0].to_dict())
+            if event_id in fm_dict:
+                e_dict.update(fm_dict[event_id])
             
             inference_list.append(e_dict)
             event_meta.append({
