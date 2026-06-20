@@ -32,151 +32,92 @@ module.exports = function replayHandler(ws) {
     JSON.stringify({
       type: "INFO",
       message: "Replay service is online.",
-    }),
+    })
   );
 
-module.exports = function(ws) {
-  let interval = null;
-
-  // Clear interval safely to avoid leaks
   const cleanup = () => {
-    if (interval) {
-      clearInterval(interval);
-      interval = null;
-    }
-  };
-
-  ws.on('message', async (message) => {
-    try {
-      const data = JSON.parse(message);
-      const event_id = data.event_id;
-
-      if (!event_id) {
-        ws.send(JSON.stringify({ type: 'ERROR', message: 'Missing event_id' }));
-        return;
-      }
-
-      cleanup(); // clean up any existing interval on this socket
-
-      let snapshots = [];
-      try {
-        const response = await fetch(`${FASTAPI_BASE_URL}/api/replay/${event_id}`);
-        if (response.status === 404) {
-          ws.send(JSON.stringify({ type: 'ERROR', message: 'Replay not found' }));
-          return;
-        } else if (!response.ok) {
-          ws.send(JSON.stringify({ type: 'ERROR', message: 'FastAPI unavailable or server error' }));
-          return;
-        }
-        snapshots = await response.json();
-      } catch (err) {
-        ws.send(JSON.stringify({ type: 'ERROR', message: 'FastAPI unavailable or server error' }));
-        return;
-      }
-
-      if (!Array.isArray(snapshots) || snapshots.length === 0) {
-        ws.send(JSON.stringify({ type: 'DONE' }));
-        return;
-      }
-
-      let i = 0;
-      interval = setInterval(() => {
-        if (i >= snapshots.length) {
-          ws.send(JSON.stringify({ type: 'DONE' }));
-          cleanup();
-          return;
-        }
-
-        const snapshot = snapshots[i];
-        
-        ws.send(JSON.stringify({
-          type: 'SNAPSHOT',
-          timestamp: snapshot.timestamp,
-          zone_scores: snapshot.zone_scores,
-          progress_percent: Math.round((i / snapshots.length) * 100)
-        }));
-
-        i++;
-      }, 800);
-
-    } catch (err) {
-      ws.send(JSON.stringify({ type: 'ERROR', message: 'Invalid JSON message or internal error' }));
-    }
-  });
-
-  ws.on('close', () => {
-    cleanup();
-  });
-
-    const eventId = parsed.event_id;
-    if (!eventId) {
-      ws.send(
-        JSON.stringify({
-          type: "ERROR",
-          message: "Missing event_id in request.",
-        }),
-      );
-      return;
-    }
-
-    // Cancel any ongoing streaming interval for this socket
     if (activeInterval) {
       clearInterval(activeInterval);
       activeInterval = null;
     }
+  };
 
-    const data = getReplayData();
-    const snapshots = data[eventId];
-
-    if (!snapshots) {
-      ws.send(
-        JSON.stringify({
-          type: "ERROR",
-          event_id: eventId,
-          message: `No precomputed replay data found for event ${eventId}.`,
-        }),
-      );
-      return;
-    }
-
-    ws.send(
-      JSON.stringify({
-        type: "ACK",
-        event_id: eventId,
-        total_steps: snapshots.length,
-      }),
-    );
-
-    // Stream snapshots sequentially with a delay (e.g. 500ms per step)
-    let currentStep = 0;
-    activeInterval = setInterval(() => {
-      if (currentStep >= snapshots.length) {
+  ws.on("message", (message) => {
+    try {
+      const parsed = JSON.parse(message);
+      const eventId = parsed.event_id;
+      
+      if (!eventId) {
         ws.send(
           JSON.stringify({
-            type: "COMPLETE",
-            event_id: eventId,
-          }),
+            type: "ERROR",
+            message: "Missing event_id in request.",
+          })
         );
-        clearInterval(activeInterval);
-        activeInterval = null;
+        return;
+      }
+
+      cleanup(); // Cancel any ongoing streaming interval for this socket
+
+      const data = getReplayData();
+      const snapshots = data[eventId];
+
+      if (!snapshots) {
+        ws.send(
+          JSON.stringify({
+            type: "ERROR",
+            event_id: eventId,
+            message: `No precomputed replay data found for event ${eventId}.`,
+          })
+        );
         return;
       }
 
       ws.send(
         JSON.stringify({
-          type: "SNAPSHOT",
+          type: "ACK",
           event_id: eventId,
-          step: currentStep,
-          data: snapshots[currentStep],
-        }),
+          total_steps: snapshots.length,
+        })
       );
-      currentStep++;
-    }, 500); // 500ms interval
+
+      // Stream snapshots sequentially with a delay (e.g. 500ms per step)
+      let currentStep = 0;
+      activeInterval = setInterval(() => {
+        if (currentStep >= snapshots.length) {
+          ws.send(
+            JSON.stringify({
+              type: "COMPLETE",
+              event_id: eventId,
+            })
+          );
+          cleanup();
+          return;
+        }
+
+        const snapshot = snapshots[currentStep];
+        ws.send(
+          JSON.stringify({
+            type: "SNAPSHOT",
+            event_id: eventId,
+            timestamp: snapshot.timestamp,
+            zone_scores: snapshot.zone_scores,
+            progress_percent: Math.round((currentStep / (snapshots.length - 1)) * 100),
+          })
+        );
+        currentStep++;
+      }, 500); // 500ms interval
+    } catch (err) {
+      ws.send(
+        JSON.stringify({
+          type: "ERROR",
+          message: "Invalid JSON message or internal error",
+        })
+      );
+    }
   });
 
   ws.on("close", () => {
-    if (activeInterval) {
-      clearInterval(activeInterval);
-    }
+    cleanup();
   });
 };

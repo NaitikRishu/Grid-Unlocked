@@ -11,8 +11,15 @@ export const useAppStore = create((set) => ({
   highImpact: false,
   resourceAllocation: null,    // { zone_id: { police, barricades } }
   baselineScores: {},          // { zone_id: score }
+  replayActive: false,
+  replayScores: null,          // { zone_id: score }
+  replayProgress: 0,           // 0-100 progress percent
 
   setBaselineScores: (scores) => set({ baselineScores: scores }),
+  setReplayScores: (scores) => set({ replayScores: scores }),
+  setReplayProgress: (progress) => set({ replayProgress: progress }),
+  startReplay: () => set({ replayActive: true }),
+  stopReplay: () => set({ replayActive: false, replayScores: null, replayProgress: 0 }),
 
   setSimulationResults: (data) => set({
     simulationScores: data.zone_scores || {},
