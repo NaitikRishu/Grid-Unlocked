@@ -1,4 +1,5 @@
 import os
+import json
 import pandas as pd
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
@@ -7,14 +8,17 @@ import math
 from ml.src import inference
 
 router = APIRouter()
+replay_router = APIRouter()
 
 src_dir = os.path.dirname(os.path.abspath(__file__))
 ml_dir = os.path.dirname(os.path.dirname(src_dir))
 events_path = os.path.join(ml_dir, "data", "processed", "events_clean.csv")
 fm_path = os.path.join(ml_dir, "data", "processed", "feature_matrix.csv")
+replay_path = os.path.join(ml_dir, "data", "processed", "replay_data.json")
 
 _events_df = None
 _fm_df = None
+_replay_data = None
 
 def load_data():
     global _events_df, _fm_df
@@ -32,6 +36,39 @@ def load_data():
             
     return _events_df, _fm_df
 
+def load_replay_data():
+    global _replay_data
+    if _replay_data is None:
+        if not os.path.exists(replay_path):
+            raise FileNotFoundError("Replay data not generated")
+        try:
+            with open(replay_path, "r") as f:
+                _replay_data = json.load(f)
+        except Exception as e:
+            raise ValueError(f"Malformed JSON: {str(e)}")
+    return _replay_data
+
+
+@replay_router.get("/{event_id}", tags=["replay"])
+async def get_replay(event_id: str) -> List[Dict[str, Any]]:
+    """Return replay snapshots for a given event ID."""
+    try:
+        try:
+            data = load_replay_data()
+        except FileNotFoundError:
+            raise HTTPException(status_code=404, detail="Replay data not generated")
+        except ValueError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+            
+        if event_id in data:
+            return data[event_id]
+        return []
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/post-event", tags=["analytics"])
 async def post_event_analytics() -> List[Dict[str, Any]]:
     """Return post-event analytics summary."""
@@ -40,13 +77,11 @@ async def post_event_analytics() -> List[Dict[str, Any]]:
         if events_df.empty:
             return []
             
-        # We need actual_duration, so drop rows where event_duration_minutes is NaN
         valid_events = events_df.dropna(subset=["id", "event_duration_minutes", "event_type", "zone_id"])
         
         if valid_events.empty:
             return []
             
-        # Prepare list for inference
         inference_list = []
         event_meta = []
         
@@ -55,7 +90,6 @@ async def post_event_analytics() -> List[Dict[str, Any]]:
             e_dict = row.to_dict()
             e_dict["event_id"] = event_id
             
-            # Use feature matrix if available
             if not fm_df.empty and event_id in fm_df["event_id"].values:
                 fm_row = fm_df[fm_df["event_id"] == event_id]
                 if not fm_row.empty:
@@ -69,7 +103,6 @@ async def post_event_analytics() -> List[Dict[str, Any]]:
                 "actual_duration": float(row["event_duration_minutes"])
             })
             
-        # Batch predict
         predictions = inference.predict_batch(inference_list)
         
         results = []
@@ -108,7 +141,6 @@ async def zone_summary() -> List[Dict[str, Any]]:
         if events_df.empty:
             return []
             
-        # Group by zone
         valid_zones = events_df.dropna(subset=["zone_id", "event_type"])
         if valid_zones.empty:
             return []
@@ -120,14 +152,12 @@ async def zone_summary() -> List[Dict[str, Any]]:
             event_count = len(group)
             top_event_type = group["event_type"].mode().iloc[0] if not group["event_type"].mode().empty else "Unknown"
             
-            # calculate average duration
             durations = group["event_duration_minutes"].dropna()
             avg_duration = durations.mean() if not durations.empty else 0.0
             
             if math.isnan(avg_duration) or math.isinf(avg_duration):
                 avg_duration = 0.0
                 
-            # No violations dataset available in the requirements list to load, returning 0
             avg_violations_7d = 0.0
             
             results.append({
