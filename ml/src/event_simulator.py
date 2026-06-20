@@ -153,12 +153,34 @@ def run_simulation(event_dict_req: dict, params: dict) -> dict:
     
     # Step 3: Apply manpower effect on the score
     manpower = int(params.get("manpower", 0))
+    vms_active = bool(params.get("vms_active", False))
+    signal_optimized = bool(params.get("signal_optimized", False))
+    clearway_enforced = bool(params.get("clearway_enforced", False))
+    heavy_vehicle_restricted = bool(params.get("heavy_vehicle_restricted", False))
+
     adjusted_score = adjusted_score * (1.0 - manpower * 0.012)
+    
+    if vms_active:
+        adjusted_score = adjusted_score * 0.85
+        
+    if heavy_vehicle_restricted:
+        adjusted_score = adjusted_score * 0.90
+
+    weather = str(params.get("weather", "sunny")).lower()
+    if weather == "rainy":
+        adjusted_score = adjusted_score * 1.15
+    elif weather == "monsoon":
+        adjusted_score = adjusted_score * 1.30
+    elif weather == "thunderstorm":
+        adjusted_score = adjusted_score * 1.50
+        
     adjusted_score = max(0.0, min(100.0, adjusted_score))
     
     # Step 4: Apply barricades effect (Radius Squeezing)
     barricades = int(params.get("barricades", 0))
     effective_radius = max(100.0, 500.0 - barricades * 20.0)  # Squeeze radius by 20m per barricade
+    if heavy_vehicle_restricted:
+        effective_radius = max(100.0, effective_radius * 0.90)
     
     # Adjust decay lambda: smaller radius -> higher decay (faster dropoff)
     # Default decay is 0.3 (at 500m baseline). We scale lambda proportionally.
@@ -180,17 +202,37 @@ def run_simulation(event_dict_req: dict, params: dict) -> dict:
     diversion_active = bool(params.get("diversion_active", False))
     routes_geojson = {"type": "FeatureCollection", "features": []}
     
+    delay_mult = 1.0
+    if signal_optimized:
+        delay_mult *= 0.70
+    if clearway_enforced:
+        delay_mult *= 0.80
+        
+    if weather == "rainy":
+        delay_mult *= 1.20
+    elif weather == "monsoon":
+        delay_mult *= 1.50
+    elif weather == "thunderstorm":
+        delay_mult *= 2.00
+
     if diversion_active:
         if event_id:
-            # Load from cache or compute live
-            routes_geojson = route_engine.get_route_for_event(G, event_id)
+            # If detour metrics are optimized, run live routing to apply the delay multiplier
+            if signal_optimized or clearway_enforced or not event_id:
+                nearest_node = graph_utils.get_nearest_node(G, lat, lon)
+                dest_node = route_engine.find_downstream_node(G, nearest_node, target_distance_m=2000)
+                blocked = route_engine.get_blocked_edges(G, lat, lon, radius_m=effective_radius)
+                routes = route_engine.compute_alternate_routes(G, nearest_node, dest_node, blocked)
+                routes_geojson = route_engine.routes_to_geojson(G, routes, adjusted_score, blocked, delay_mult)
+            else:
+                routes_geojson = route_engine.get_route_for_event(G, event_id)
         else:
             # Compute live for hypothetical event
             nearest_node = graph_utils.get_nearest_node(G, lat, lon)
             dest_node = route_engine.find_downstream_node(G, nearest_node, target_distance_m=2000)
             blocked = route_engine.get_blocked_edges(G, lat, lon, radius_m=effective_radius)
             routes = route_engine.compute_alternate_routes(G, nearest_node, dest_node, blocked)
-            routes_geojson = route_engine.routes_to_geojson(G, routes, adjusted_score)
+            routes_geojson = route_engine.routes_to_geojson(G, routes, adjusted_score, blocked, delay_mult)
             
     # Step 7: Allocate resources across affected zones
     allocations = resource_allocator.allocate_resources(
@@ -200,7 +242,15 @@ def run_simulation(event_dict_req: dict, params: dict) -> dict:
     # Step 8: Compute delay saved (assuming 100 score corresponds to 120 minutes max duration)
     base_duration = base_score / 100.0 * 120.0
     adjusted_duration = adjusted_score / 100.0 * 120.0
-    delay_saved = round(max(0.0, base_duration - adjusted_duration))
+    
+    extra_savings = 0.0
+    if diversion_active:
+        if signal_optimized:
+            extra_savings += 8.0
+        if clearway_enforced:
+            extra_savings += 5.0
+            
+    delay_saved = round(max(0.0, base_duration - adjusted_duration)) + extra_savings
     
     return {
         "zone_scores": zone_scores,
@@ -212,6 +262,139 @@ def run_simulation(event_dict_req: dict, params: dict) -> dict:
             z_id: {"police": alloc["police"], "barricades": alloc["barricades"]}
             for z_id, alloc in allocations.items()
         }
+    }
+
+
+def recommend_interventions(event_dict_req: dict) -> dict:
+    """Recommends mitigation parameters based on baseline predictions and past historical events."""
+    G, zones_gdf, events_df, fm_df = load_resources()
+    
+    lat = float(event_dict_req.get("latitude"))
+    lon = float(event_dict_req.get("longitude"))
+    event_type = str(event_dict_req.get("event_type"))
+    start_time_str = str(event_dict_req.get("start_datetime"))
+    
+    # Predict baseline score
+    base_features, event_id = find_matching_event_features(lat, lon, event_type, start_time_str)
+    base_prediction = predict_event(base_features)
+    base_score = base_prediction["congestion_score"]
+    
+    # 1. Recommend manpower
+    # We want base_score * (1 - manpower * 0.012) <= 40
+    if base_score > 40.0:
+        manpower = math.ceil((1.0 - 40.0 / base_score) / 0.012)
+        manpower = max(5, min(45, manpower))
+    else:
+        manpower = 5
+        
+    # 2. Recommend barricades
+    barricades = math.ceil(base_score / 5.0)
+    barricades = max(2, min(20, barricades))
+    
+    # 3. Recommend offset
+    best_offset = 0
+    min_score = base_score
+    offsets_to_try = [-60, -30, 0, 30, 60]
+    for off in offsets_to_try:
+        adjusted_features = base_features.copy()
+        if off != 0:
+            dt = pd.to_datetime(start_time_str, utc=True) + timedelta(minutes=off)
+            adjusted_features["hour_of_day"] = dt.hour
+            adjusted_features["day_of_week"] = dt.dayofweek
+            adjusted_features["month"] = dt.month
+            adjusted_features["is_peak_hour"] = 1 if dt.hour in [7,8,9,10,17,18,19,20] else 0
+            
+        pred = predict_event(adjusted_features)
+        score_at_off = pred["congestion_score"]
+        if score_at_off < min_score:
+            min_score = score_at_off
+            best_offset = off
+            
+    # Only recommend offset if it saves at least 3 score points
+    if base_score - min_score < 3.0:
+        best_offset = 0
+        
+    # 4. Recommend diversion active
+    diversion_active = base_score >= 50.0
+    
+    recommended_vms_active = base_score >= 50.0
+    recommended_signal_optimized = base_score >= 55.0
+    recommended_clearway_enforced = base_score >= 60.0
+    recommended_heavy_vehicle_restricted = base_score >= 65.0
+    
+    # 5. Fetch past similar events in the same zone
+    zone_id = base_features.get("zone_id")
+    similar_events = []
+    
+    if not events_df.empty and 'zone_id' in events_df.columns:
+        # clean zone ids for matching
+        mask = events_df['zone_id'].astype(str).apply(congestion_propagation.clean_zone_id) == zone_id
+        # match same type
+        mask &= events_df['event_type'].astype(str).str.lower() == event_type.lower()
+        
+        similar_df = events_df[mask]
+        if similar_df.empty:
+            # fallback: match zone only
+            similar_df = events_df[events_df['zone_id'].astype(str).apply(congestion_propagation.clean_zone_id) == zone_id]
+            
+        if not similar_df.empty:
+            # Sort by start_datetime descending to get latest
+            similar_df = similar_df.sort_values(by="start_datetime", ascending=False)
+            
+            # Format up to 3 events
+            for _, row in similar_df.head(3).iterrows():
+                dur = float(row.get("event_duration_minutes", 60.0))
+                if pd.isna(dur) or math.isnan(dur):
+                    dur = 60.0
+                similar_events.append({
+                    "id": str(row["id"]),
+                    "event_cause": str(row.get("event_cause", "vehicle_breakdown")),
+                    "start_datetime": str(row["start_datetime"]),
+                    "duration_minutes": round(dur, 1),
+                    "priority": str(row.get("priority", "medium"))
+                })
+                
+    # 6. Generate explanation
+    exp = f"Based on a predicted baseline congestion score of {base_score:.1f} in zone {zone_id}, "
+    exp += f"we recommend deploying {manpower} officers and {barricades} barricades. "
+    if best_offset != 0:
+        exp += f"A schedule shift of {best_offset} minutes is suggested to reduce peak impact to {min_score:.1f}. "
+    else:
+        exp += "No schedule shift is necessary. "
+        
+    if diversion_active:
+        exp += "Activating alternate routes is highly recommended to divert traffic."
+    else:
+        exp += "Standard routing should suffice as the impact is localized."
+
+    extra_recs = []
+    if recommended_vms_active:
+        extra_recs.append("VMS signboards")
+    if recommended_signal_optimized:
+        extra_recs.append("signal timing optimization")
+    if recommended_clearway_enforced:
+        extra_recs.append("no-parking enforcement")
+    if recommended_heavy_vehicle_restricted:
+        extra_recs.append("heavy vehicle restrictions")
+    
+    if extra_recs:
+        exp += f" Additionally, consider activating: {', '.join(extra_recs)}."
+        
+    if similar_events:
+        past_causes = list(set([e["event_cause"] for e in similar_events]))
+        exp += f" Similar past incidents (such as {', '.join(past_causes[:2])}) in this ward took up to {max([e['duration_minutes'] for e in similar_events]):.1f} minutes to resolve."
+        
+    return {
+        "recommended_manpower": manpower,
+        "recommended_barricades": barricades,
+        "recommended_diversion_active": diversion_active,
+        "recommended_offset_minutes": best_offset,
+        "recommended_signal_optimized": recommended_signal_optimized,
+        "recommended_vms_active": recommended_vms_active,
+        "recommended_clearway_enforced": recommended_clearway_enforced,
+        "recommended_heavy_vehicle_restricted": recommended_heavy_vehicle_restricted,
+        "explanation": exp,
+        "similar_events": similar_events
     }
 
 if __name__ == '__main__':
@@ -232,3 +415,9 @@ if __name__ == '__main__':
     print("Simulated predicted duration:", res["predicted_duration_minutes"])
     print("Simulated delay saved (mins):", res["delay_saved_minutes"])
     print("Alternate routes count:", len(res["alternate_routes"]))
+    
+    rec = recommend_interventions(req)
+    print("Recommended manpower:", rec["recommended_manpower"])
+    print("Recommended barricades:", rec["recommended_barricades"])
+    print("Explanation:", rec["explanation"])
+

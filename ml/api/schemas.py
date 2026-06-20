@@ -44,6 +44,11 @@ class SimulateRequest(BaseModel):
 	barricades: int = Field(..., ge=0, le=20)
 	diversion_active: bool
 	start_time_offset_minutes: int = Field(..., ge=-120, le=120)
+	signal_optimized: Optional[bool] = False
+	vms_active: Optional[bool] = False
+	clearway_enforced: Optional[bool] = False
+	heavy_vehicle_restricted: Optional[bool] = False
+	weather: Optional[str] = "sunny"
 
 
 class ResourceAllocationItem(BaseModel):
@@ -70,3 +75,40 @@ class ReplaySnapshot(BaseModel):
 	timestamp: datetime
 	zone_scores: Dict[str, float]
 	progress_percent: float
+
+
+class RecommendRequest(BaseModel):
+	event_type: str
+	latitude: float
+	longitude: float
+	start_datetime: str
+
+
+class SimilarEventItem(BaseModel):
+	id: str
+	event_cause: str
+	start_datetime: str
+	duration_minutes: float
+	priority: str
+
+
+class RecommendResponse(BaseModel):
+	recommended_manpower: int
+	recommended_barricades: int
+	recommended_diversion_active: bool
+	recommended_offset_minutes: int
+	recommended_signal_optimized: bool
+	recommended_vms_active: bool
+	recommended_clearway_enforced: bool
+	recommended_heavy_vehicle_restricted: bool
+	explanation: str
+	similar_events: List[SimilarEventItem]
+
+
+class CreateEventRequest(BaseModel):
+	event_type: str
+	latitude: float
+	longitude: float
+	start_datetime: str
+	priority: str
+	event_cause: str

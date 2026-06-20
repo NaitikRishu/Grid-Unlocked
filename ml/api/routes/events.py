@@ -3,7 +3,7 @@ import pandas as pd
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
 
-from ml.api.schemas import EventResponse
+from ml.api.schemas import EventResponse, CreateEventRequest
 from ml.src.inference import predict_event
 
 router = APIRouter()
@@ -88,4 +88,63 @@ async def get_event(event_id: str):
         "prediction": prediction,
         "predicted_score": prediction["congestion_score"],
         "actual_duration": event_obj["duration_minutes"]
+    }
+
+
+import time
+
+@router.post("", response_model=EventResponse, tags=["events"])
+async def create_event(req: CreateEventRequest):
+    global events_df
+    # generate a unique id
+    new_id = f"CUSTOM{int(time.time())}"
+    
+    # Estimate ward/zone of the event
+    zone_id = None
+    # Let's import event simulator resources to find the closest zone
+    from ml.src.event_simulator import load_resources
+    import math
+    from ml.src import congestion_propagation
+    _, zones_gdf, _, _ = load_resources()
+    if zones_gdf is not None and not zones_gdf.empty:
+        min_dist = float('inf')
+        for idx, row in zones_gdf.iterrows():
+            centroid = row.geometry.centroid
+            dist = math.hypot(centroid.y - req.latitude, centroid.x - req.longitude)
+            if dist < min_dist:
+                min_dist = dist
+                zone_id = congestion_propagation.clean_zone_id(row['KGISWardNo'])
+                
+    # append row
+    new_row = {
+        "id": new_id,
+        "event_type": req.event_type,
+        "latitude": req.latitude,
+        "longitude": req.longitude,
+        "start_datetime": req.start_datetime,
+        "priority": req.priority,
+        "event_cause": req.event_cause,
+        "status": "active",
+        "event_duration_minutes": 180.0, # default 3 hours for planned match/events
+        "zone_id": zone_id
+    }
+    # Append using pandas
+    new_df = pd.DataFrame([new_row])
+    events_df = pd.concat([events_df, new_df], ignore_index=True)
+    events_df.to_csv(events_path, index=False)
+    
+    # Reload from disk
+    events_df = pd.read_csv(events_path)
+    
+    return {
+        "id": new_row["id"],
+        "event_type": new_row["event_type"],
+        "lat": new_row["latitude"],
+        "lon": new_row["longitude"],
+        "zone_id": str(new_row["zone_id"]) if new_row["zone_id"] else None,
+        "start_datetime": new_row["start_datetime"],
+        "end_datetime": None,
+        "duration_minutes": new_row["event_duration_minutes"],
+        "priority": new_row["priority"],
+        "status": new_row["status"]
     }
