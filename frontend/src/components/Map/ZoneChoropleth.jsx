@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { GeoJSON } from 'react-leaflet'
 import client from '../../api/client'
+import { useAppStore } from '../../store/appStore'
 
-function ZoneChoropleth({ customScores = null }) {
+function ZoneChoropleth({ customScores: propCustomScores = null }) {
+  const { simulationScores, simulationActive } = useAppStore()
+  const customScores = propCustomScores || (simulationActive ? simulationScores : null)
   const [geoJsonData, setGeoJsonData] = useState(null)
   const [maxBaselineScore, setMaxBaselineScore] = useState(1)
   const [loading, setLoading] = useState(true)

@@ -3,15 +3,35 @@ import client from './api/client'
 import Header from './components/Layout/Header'
 import Sidebar from './components/Layout/Sidebar'
 import BengaluruMap from './components/Map/BengaluruMap'
+import WhatIfPanel from './components/Controls/WhatIfPanel'
 import './App.css'
 
 function App() {
   const [selectedEventId, setSelectedEventId] = useState(null)
+  const [selectedEvent, setSelectedEvent] = useState(null)
   const [backendState, setBackendState] = useState({
     loading: true,
     ok: false,
     message: 'Checking backend connection...',
   })
+
+  // Fetch full details of the selected event for the simulator
+  useEffect(() => {
+    if (selectedEventId) {
+      client.get(`/events/${selectedEventId}`)
+        .then((res) => {
+          if (res.data && res.data.event) {
+            setSelectedEvent(res.data.event)
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching event details for simulation:', err)
+          setSelectedEvent(null)
+        })
+    } else {
+      setSelectedEvent(null)
+    }
+  }, [selectedEventId])
 
   useEffect(() => {
     let cancelled = false
@@ -76,6 +96,9 @@ function App() {
       <section className="workspace">
         <Sidebar selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
         <BengaluruMap selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
+        <aside className="sidebar">
+          <WhatIfPanel selectedEvent={selectedEvent} />
+        </aside>
       </section>
     </main>
   )

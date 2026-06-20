@@ -51,7 +51,11 @@ def load_resources():
         
     if _fm_df is None:
         print("Loading feature matrix in simulator...")
-        _fm_df = pd.read_csv(FM_PATH)
+        if os.path.exists(FM_PATH):
+            _fm_df = pd.read_csv(FM_PATH)
+        else:
+            print("Feature matrix not found. Initializing dummy feature matrix.")
+            _fm_df = pd.DataFrame(columns=["event_id"])
         
     return _G, _zones_gdf, _events_df, _fm_df
 
