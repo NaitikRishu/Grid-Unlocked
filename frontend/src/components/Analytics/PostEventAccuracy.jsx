@@ -64,14 +64,22 @@ function PostEventAccuracy() {
 
       <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '8px' }}>
         <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
+          <colgroup>
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '18%' }} />
+          </colgroup>
           <thead>
-            <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)' }}>
-              <th style={{ padding: '12px', fontWeight: '600', width: '18%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Event ID</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '14%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Type</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '14%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Zone ID</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '18%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Predicted Duration</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '18%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Actual Duration</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '18%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Absolute Error (min)</th>
+            <tr style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)' }}>
+              <th style={{ padding: '10px 12px', fontWeight: '600', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)', textAlign: 'left' }}>Event ID</th>
+              <th style={{ padding: '10px 12px', fontWeight: '600', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)', textAlign: 'left' }}>Type</th>
+              <th style={{ padding: '10px 12px', fontWeight: '600', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)', textAlign: 'left' }}>Zone ID</th>
+              <th style={{ padding: '10px 12px', fontWeight: '600', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)', textAlign: 'left' }}>Predicted Duration</th>
+              <th style={{ padding: '10px 12px', fontWeight: '600', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)', textAlign: 'left' }}>Actual Duration</th>
+              <th style={{ padding: '10px 12px', fontWeight: '600', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)', textAlign: 'left' }}>Absolute Error (min)</th>
             </tr>
           </thead>
           <tbody>

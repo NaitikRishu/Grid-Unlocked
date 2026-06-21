@@ -270,7 +270,19 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  style={{ background: 'var(--accent)', color: '#ffffff', border: 'none', padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
+                  style={{ 
+                    background: 'var(--accent)', 
+                    color: '#09090b', 
+                    border: '1px solid var(--accent)', 
+                    padding: '10px', 
+                    borderRadius: '8px', 
+                    fontSize: '12px', 
+                    fontWeight: 700, 
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer', 
+                    opacity: isSubmitting ? 0.7 : 1,
+                    boxShadow: '0 0 10px rgba(255, 255, 255, 0.15)',
+                    transition: 'all 0.2s ease'
+                  }}
                 >
                   {isSubmitting ? 'Registering...' : 'Add & Plan Incident'}
                 </button>

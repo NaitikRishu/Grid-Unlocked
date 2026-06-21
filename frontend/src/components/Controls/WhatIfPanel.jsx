@@ -416,14 +416,27 @@ EXPECTED IMPACT OUTCOME:
             disabled={isRecommending || isSimulating}
             style={{ 
               flex: 1,
-              fontWeight: 500,
+              fontWeight: 600,
               fontSize: '12px',
               color: 'var(--text-primary)',
-              border: '1px solid var(--border-strong)',
-              background: 'transparent',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              background: 'rgba(255, 255, 255, 0.05)',
               padding: '10px 0',
               borderRadius: '8px',
-              cursor: (isRecommending || isSimulating) ? 'not-allowed' : 'pointer'
+              cursor: (isRecommending || isSimulating) ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseOver={(e) => {
+              if (!isRecommending && !isSimulating) {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (!isRecommending && !isSimulating) {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+              }
             }}
           >
             {isRecommending ? 'Analyzing...' : 'Auto-Recommend'}
@@ -434,15 +447,29 @@ EXPECTED IMPACT OUTCOME:
             disabled={isSimulating || isRecommending}
             style={{ 
               flex: 1.2,
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: '12px',
-              color: '#ffffff',
-              border: 'none',
+              color: '#09090b',
+              border: '1px solid var(--accent)',
               background: 'var(--accent)',
               padding: '10px 0',
               borderRadius: '8px',
               cursor: (isSimulating || isRecommending) ? 'not-allowed' : 'pointer',
-              opacity: (isSimulating || isRecommending) ? 0.7 : 1
+              opacity: (isSimulating || isRecommending) ? 0.7 : 1,
+              boxShadow: '0 0 12px rgba(255, 255, 255, 0.2)',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseOver={(e) => {
+              if (!isSimulating && !isRecommending) {
+                e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.4)';
+                e.currentTarget.style.transform = 'scale(1.02)';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (!isSimulating && !isRecommending) {
+                e.currentTarget.style.boxShadow = '0 0 12px rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }
             }}
           >
             {isSimulating ? 'Simulating...' : 'Run Simulation'}
@@ -491,7 +518,7 @@ EXPECTED IMPACT OUTCOME:
             <div style={{ display: 'flex', gap: '16px' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span className="text-eyebrow">DELAY SAVED</span>
-                <span className="text-metric-small" style={{ color: 'var(--success)' }}>{simulationDelaySaved} mins</span>
+                <span className="text-metric-small" style={{ color: '#00ff66', textShadow: '0 0 8px rgba(0, 255, 102, 0.3)' }}>{simulationDelaySaved} mins</span>
               </div>
               <div style={{ width: '1px', background: 'var(--border)' }} />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>

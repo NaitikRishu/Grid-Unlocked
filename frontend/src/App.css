@@ -253,9 +253,9 @@
 .pulse-dot {
   width: 6px;
   height: 6px;
-  background-color: var(--success);
+  background-color: #00ff66;
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--success);
+  box-shadow: 0 0 8px #00ff66;
   animation: pulseDot 2s infinite;
 }
 
@@ -389,16 +389,16 @@
 .status-dot {
   width: 8px;
   height: 8px;
-  background-color: var(--success);
+  background-color: #00ff66;
   border-radius: 50%;
-  box-shadow: 0 0 6px var(--success);
+  box-shadow: 0 0 6px #00ff66;
 }
 
 .status-dot-ripple {
   position: absolute;
   width: 16px;
   height: 16px;
-  border: 1.5px solid var(--success);
+  border: 1.5px solid #00ff66;
   border-radius: 50%;
   animation: statusRippleAnim 2.5s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
   opacity: 0;

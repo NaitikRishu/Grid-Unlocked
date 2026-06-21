@@ -55,9 +55,13 @@ function DelayChart() {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
             <defs>
-              <linearGradient id="cyanGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ffffff" />
-                <stop offset="100%" stopColor="#6b7280" />
+              <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#1d4ed8" />
+              </linearGradient>
+              <linearGradient id="redGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ef4444" />
+                <stop offset="100%" stopColor="#b91c1c" />
               </linearGradient>
               <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
                 <feGaussianBlur stdDeviation="3" result="blur" />
@@ -95,8 +99,8 @@ function DelayChart() {
               wrapperStyle={{ fontSize: '0.76rem', paddingTop: '10px', color: 'var(--text-secondary)' }}
               iconSize={10}
             />
-            <Bar dataKey="Baseline Congestion" fill="url(#cyanGradient)" radius={[4, 4, 0, 0]} barSize={16} isAnimationActive={true} animationDuration={1200} />
-            <Bar dataKey="Simulated Congestion" fill="#ffffff" filter="url(#softGlow)" radius={[4, 4, 0, 0]} barSize={16} isAnimationActive={true} animationDuration={1200} />
+            <Bar dataKey="Baseline Congestion" fill="url(#blueGradient)" radius={[4, 4, 0, 0]} barSize={16} isAnimationActive={true} animationDuration={1200} />
+            <Bar dataKey="Simulated Congestion" fill="url(#redGradient)" filter="url(#softGlow)" radius={[4, 4, 0, 0]} barSize={16} isAnimationActive={true} animationDuration={1200} />
           </BarChart>
         </ResponsiveContainer>
       </div>
