@@ -7,7 +7,7 @@ function Header({ activeTab, onTabChange }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <div className="radar-pulse"></div>
           <h1 style={styles.brandTitle}>
-            Grid<span style={styles.brandAccent}>Flow</span>
+            GRID-<span style={styles.brandAccent}>UNLOCKED</span>
           </h1>
           <span style={styles.subtext}>Traffic Intelligence Control Room</span>
         </div>

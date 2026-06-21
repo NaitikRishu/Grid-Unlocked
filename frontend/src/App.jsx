@@ -7,7 +7,6 @@ import WhatIfPanel from './components/Controls/WhatIfPanel'
 import DelayChart from './components/Analytics/DelayChart'
 import ZoneRankTable from './components/Analytics/ZoneRankTable'
 import PostEventAccuracy from './components/Analytics/PostEventAccuracy'
-import BackgroundCanvas from './components/Layout/BackgroundCanvas'
 import './App.css'
 
 function KPICard({ label, finalValue, suffix = '', borderClass = '', trend = '' }) {
@@ -171,8 +170,6 @@ function App() {
 
   return (
     <main className="app-shell">
-      <BackgroundCanvas />
-      <CustomCursor />
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === 'operations' ? (
@@ -207,7 +204,7 @@ function App() {
       )}
 
       <footer className="app-footer">
-        <div>GridFlow — © 2026 Traffic Intelligence Control Room</div>
+        <div>GRID-UNLOCKED — © 2026 Traffic Intelligence Control Room</div>
         <div className="footer-glowing-indicator">
           <div className="pulse-dot"></div>
           <span>System status: Operational</span>
