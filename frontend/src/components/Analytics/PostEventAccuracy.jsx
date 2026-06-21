@@ -63,11 +63,10 @@ function PostEventAccuracy() {
         <table style={{ width: '100%', minWidth: '800px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
           <thead>
             <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)', position: 'sticky', top: 0, zIndex: 1 }}>
-              <th style={{ padding: '12px', fontWeight: '600', width: '15%' }}>Event ID</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '15%' }}>Type</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '15%' }}>Zone ID</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Event ID</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Zone ID</th>
               <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Predicted Duration</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '15%' }}>Actual Duration</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Actual Duration</th>
               <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Absolute Error (min)</th>
             </tr>
           </thead>
@@ -101,7 +100,6 @@ function PostEventAccuracy() {
                   }}
                 >
                   <td style={{ padding: '10px 12px', fontWeight: '700' }}>{row.event_id}</td>
-                  <td style={{ padding: '10px 12px', textTransform: 'capitalize', color: 'var(--text-secondary)' }}>{row.event_type}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>Zone {row.zone_id}</td>
                   <td style={{ padding: '10px 12px' }}>{row.predicted_duration} mins</td>
                   <td style={{ padding: '10px 12px' }}>

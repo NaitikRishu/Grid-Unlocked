@@ -63,7 +63,7 @@ function ZoneRankTable() {
       </p>
 
       <div style={{ flex: 1, maxHeight: '250px', overflowY: 'auto', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '8px', marginTop: 'auto' }}>
-        <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
+        <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
           <thead>
             <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)', position: 'sticky', top: 0, zIndex: 1 }}>
               <th style={{ padding: '12px', fontWeight: '600', width: '18%' }}>Zone ID</th>
@@ -87,7 +87,7 @@ function ZoneRankTable() {
                 </td>
               </tr>
             ) : (
-              tableData.slice(0, 30).map((row, idx) => {
+              tableData.slice(0, 6).map((row, idx) => {
                 const score = row.score
                 let badgeColor = 'var(--success)'
                 let badgeBg = 'var(--success-dim)'
@@ -138,9 +138,9 @@ function ZoneRankTable() {
           </tbody>
         </table>
       </div>
-      {tableData.length > 30 && (
+      {tableData.length > 6 && (
         <p style={{ margin: '8px 0 0', fontSize: '0.76rem', color: '#a1a1aa', textAlign: 'right' }}>
-          * Showing top 30 zones by congestion score
+          * Showing top 6 zones by congestion score
         </p>
       )}
     </div>
