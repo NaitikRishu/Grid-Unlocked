@@ -3,174 +3,68 @@ import { GeoJSON, Marker } from 'react-leaflet'
 import L from 'leaflet'
 import { useAppStore } from '../../store/appStore'
 
-// Custom Leaflet DivIcons using emojis to avoid image path resolution errors
-const barricadeIcon = L.divIcon({
+const createPremiumMarker = (shellFill, shellStroke, discFill, discStroke, iconSvg) => L.divIcon({
   html: `
-    <div style="
-      background: #ef4444;
-      color: #ffffff;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.74rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      border: 2px solid #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4), 0 0 15px rgba(239, 68, 68, 0.4);
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: inherit;
-      transform: translate(-50%, -50%);
-    ">
-      <span>🚧</span> PLACE BARRICADE (ROAD CLOSED)
+    <div style="width: 36px; height: 46px; position: relative;">
+      <svg width="36" height="46" viewBox="0 0 36 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="18" cy="44" rx="5" ry="2.5" fill="rgba(0,0,0,0.18)"/>
+        <path d="M18 2C9.163 2 2 9.163 2 18C2 28 18 42 18 42C18 42 34 28 34 18C34 9.163 26.837 2 18 2Z" 
+              fill="${shellFill}" stroke="${shellStroke}" stroke-width="0.8"/>
+        <circle cx="18" cy="16" r="10" fill="${discFill}" stroke="${discStroke}" stroke-width="0.6"/>
+        <g transform="translate(12, 10)">
+          ${iconSvg}
+        </g>
+      </svg>
     </div>
   `,
-  className: 'custom-map-badge-barricade',
-  iconSize: [0, 0],
-  iconAnchor: [0, 0]
+  className: 'premium-marker',
+  iconSize: [36, 46],
+  iconAnchor: [18, 44]
 })
 
-const diversionIcon = L.divIcon({
-  html: `
-    <div style="
-      background: #10b981;
-      color: #ffffff;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.74rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      border: 2px solid #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4), 0 0 15px rgba(16, 185, 129, 0.4);
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: inherit;
-      transform: translate(-50%, -50%);
-    ">
-      <span>↩️</span> DETOUR: DIVERT TRAFFIC HERE ➔
-    </div>
-  `,
-  className: 'custom-map-badge-diversion',
-  iconSize: [0, 0],
-  iconAnchor: [0, 0]
-})
+// 1. Signal Optimized (Green)
+const signalIcon = createPremiumMarker(
+  '#0F2318', 'rgba(74,222,128,0.3)', '#1A3D28', 'rgba(74,222,128,0.2)',
+  `<line x1="3" y1="3" x2="3" y2="9" stroke="#4ADE80" stroke-width="1.5" stroke-linecap="round" />
+   <line x1="6" y1="3" x2="6" y2="9" stroke="#FBBF24" stroke-width="1.5" stroke-linecap="round" />
+   <line x1="9" y1="3" x2="9" y2="9" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" />`
+)
 
-const signalIcon = L.divIcon({
-  html: `
-    <div style="
-      background: #3b82f6;
-      color: #ffffff;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.74rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      border: 2px solid #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4), 0 0 15px rgba(59, 130, 246, 0.4);
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: inherit;
-      transform: translate(-50%, -50%);
-    ">
-      <span>🚦</span> SIGNAL OPTIMIZED
-    </div>
-  `,
-  className: 'custom-map-badge-signal',
-  iconSize: [0, 0],
-  iconAnchor: [0, 0]
-})
+// 2. Detour (Blue)
+const diversionIcon = createPremiumMarker(
+  '#0A1F30', 'rgba(96,165,250,0.3)', '#132840', 'rgba(96,165,250,0.2)',
+  `<path d="M3 9 Q 3 3, 9 3 L 9 3" stroke="#60A5FA" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+   <path d="M6 0 L 9 3 L 6 6" stroke="#60A5FA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`
+)
 
-const vmsIcon = L.divIcon({
-  html: `
-    <div style="
-      background: #8b5cf6;
-      color: #ffffff;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.74rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      border: 2px solid #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4), 0 0 15px rgba(139, 92, 246, 0.4);
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: inherit;
-      transform: translate(-50%, -50%);
-    ">
-      <span>📺</span> VMS DISPLAY ACTIVE
-    </div>
-  `,
-  className: 'custom-map-badge-vms',
-  iconSize: [0, 0],
-  iconAnchor: [0, 0]
-})
+// 3. Road Closed / Barricade (Red)
+const barricadeIcon = createPremiumMarker(
+  '#2A0F0F', 'rgba(248,113,113,0.3)', '#3D1515', 'rgba(248,113,113,0.2)',
+  `<circle cx="6" cy="6" r="5" stroke="#F87171" stroke-width="1.5" fill="none"/>
+   <line x1="2.5" y1="6" x2="9.5" y2="6" stroke="#F87171" stroke-width="1.5" stroke-linecap="round"/>`
+)
 
-const clearwayIcon = L.divIcon({
-  html: `
-    <div style="
-      background: #f59e0b;
-      color: #ffffff;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.74rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      border: 2px solid #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4), 0 0 15px rgba(245, 158, 11, 0.4);
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: inherit;
-      transform: translate(-50%, -50%);
-    ">
-      <span>🚫</span> NO PARKING (CLEARWAY)
-    </div>
-  `,
-  className: 'custom-map-badge-clearway',
-  iconSize: [0, 0],
-  iconAnchor: [0, 0]
-})
+// VMS Active (Blue theme)
+const vmsIcon = createPremiumMarker(
+  '#0A1F30', 'rgba(96,165,250,0.3)', '#132840', 'rgba(96,165,250,0.2)',
+  `<rect x="1" y="2" width="10" height="6" rx="1" stroke="#60A5FA" stroke-width="1.5" fill="none"/>
+   <line x1="4" y1="10" x2="8" y2="10" stroke="#60A5FA" stroke-width="1.5" stroke-linecap="round"/>`
+)
 
-const heavyVehicleIcon = L.divIcon({
-  html: `
-    <div style="
-      background: #ea580c;
-      color: #ffffff;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-weight: 800;
-      font-size: 0.74rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      border: 2px solid #ffffff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4), 0 0 15px rgba(234, 88, 12, 0.4);
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: inherit;
-      transform: translate(-50%, -50%);
-    ">
-      <span>🚛</span> HEAVY VEHICLES BANNED
-    </div>
-  `,
-  className: 'custom-map-badge-heavy',
-  iconSize: [0, 0],
-  iconAnchor: [0, 0]
-})
+// Clearway (Amber theme)
+const clearwayIcon = createPremiumMarker(
+  '#2A1800', 'rgba(251,191,36,0.3)', '#3D2400', 'rgba(251,191,36,0.2)',
+  `<circle cx="6" cy="6" r="5" stroke="#FBBF24" stroke-width="1.5" fill="none"/>
+   <line x1="2.5" y1="2.5" x2="9.5" y2="9.5" stroke="#FBBF24" stroke-width="1.5" stroke-linecap="round"/>`
+)
+
+// Heavy Vehicle Ban (Red theme)
+const heavyVehicleIcon = createPremiumMarker(
+  '#2A0F0F', 'rgba(248,113,113,0.3)', '#3D1515', 'rgba(248,113,113,0.2)',
+  `<rect x="1" y="3" width="7" height="6" rx="1" stroke="#F87171" stroke-width="1.5" fill="none"/>
+   <path d="M8 5h2a1 1 0 0 1 1 1v3H8V5Z" stroke="#F87171" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
+   <line x1="1" y1="9" x2="11" y2="1" stroke="#F87171" stroke-width="1.5" stroke-linecap="round"/>`
+)
 
 function DiversionRoutes({ routes }) {
   const { 
@@ -180,182 +74,121 @@ function DiversionRoutes({ routes }) {
     simHeavyVehicleRestricted 
   } = useAppStore()
 
-  // Local state to toggle individual routes (index 0, 1, 2)
   const [activeRoutes, setActiveRoutes] = useState({ 0: true, 1: true, 2: true })
 
-  // Reset toggles when a new route set is loaded
   useEffect(() => {
     setActiveRoutes({ 0: true, 1: true, 2: true })
   }, [routes])
 
   if (!routes || !routes.features || routes.features.length === 0) return null
 
-  const getRouteStyle = (index, feature) => {
+  const blockedFeatures = routes.features.filter(f => f.properties?.is_blocked)
+  const altFeatures = routes.features.filter(f => !f.properties?.is_blocked)
+  const fastestAltFeature = altFeatures.length > 0 ? altFeatures[0] : null
+
+  const getRouteStyle = (feature) => {
     if (feature.properties?.is_blocked) {
-      return {
-        color: '#ef4444', // Red for congested corridor
-        weight: 7,
-        opacity: 0.9,
-        dashArray: undefined
-      }
+      return { color: 'var(--danger)', weight: 6, opacity: 0.9 }
     }
-    
-    // Colors: Green (#10b981) for fastest/recommended clear path, Orange (#f97316) for second, Grey (#9ca3af) for third
-    const colors = ['#10b981', '#f97316', '#9ca3af']
+    const altIndex = altFeatures.indexOf(feature)
+    const colors = ['var(--success)', 'var(--accent)', 'var(--text-secondary)']
     return {
-      color: colors[index] || '#9ca3af',
-      weight: index === 0 ? 6 : 4, // Boldest for fastest
+      color: colors[altIndex] || 'var(--text-secondary)',
+      weight: altIndex === 0 ? 5 : 3,
       opacity: 0.85,
-      dashArray: index > 0 ? '5, 8' : undefined // Dashed paths for alternate options
+      dashArray: altIndex > 0 ? '4, 6' : undefined
     }
   }
 
-  // Filter blocked features and the recommended fastest alternate route
-  const blockedFeatures = routes.features.filter(f => f.properties?.is_blocked)
-  const fastestAltFeature = routes.features.find(f => !f.properties?.is_blocked)
+  const getFirstCoord = (geometry) => {
+    if (!geometry || !geometry.coordinates) return null;
+    let coords = geometry.coordinates;
+    while (coords.length > 0 && Array.isArray(coords[0]) && Array.isArray(coords[0][0])) {
+      coords = coords[0];
+    }
+    if (coords.length > 0 && Array.isArray(coords[0])) {
+      return [coords[0][1], coords[0][0]]; // [lat, lon]
+    }
+    return null;
+  }
 
   const renderBarricadeMarker = () => {
     if (blockedFeatures.length === 0) return null
-    const feature = blockedFeatures[0]
-    const coords = feature.geometry.coordinates
-    if (!coords || coords.length === 0) return null
-    
-    // Position barricade slightly down the blocked road segment to prevent overlap with the diversion junction marker
-    const pointIndex = Math.min(1, coords.length - 1)
-    const pos = [
-      (coords[0][1] + coords[pointIndex][1]) / 2,
-      (coords[0][0] + coords[pointIndex][0]) / 2
-    ]
-    return (
-      <Marker position={pos} icon={barricadeIcon} />
-    )
+    const pos = getFirstCoord(blockedFeatures[0].geometry)
+    if (!pos) return null
+    return <Marker position={pos} icon={barricadeIcon} />
   }
 
   const renderDiversionMarker = () => {
     if (!fastestAltFeature) return null
-    const coords = fastestAltFeature.geometry.coordinates
-    if (!coords || coords.length === 0) return null
-    // Position diversion badge exactly at the junction intersection
-    const pos = [coords[0][1], coords[0][0]]
-    return (
-      <Marker position={pos} icon={diversionIcon} />
-    )
+    const pos = getFirstCoord(fastestAltFeature.geometry)
+    if (!pos) return null
+    return <Marker position={pos} icon={diversionIcon} />
   }
 
   const renderPolicyMarkers = () => {
     if (!fastestAltFeature) return null
-    const coords = fastestAltFeature.geometry.coordinates
-    if (!coords || coords.length === 0) return null
-    const epicenter = [coords[0][1], coords[0][0]]
+    const epicenter = getFirstCoord(fastestAltFeature.geometry)
+    if (!epicenter) return null
 
     return (
       <>
-        {simSignalOptimized && (
-          <Marker 
-            position={[epicenter[0] + 0.0004, epicenter[1]]} 
-            icon={signalIcon} 
-          />
-        )}
-        {simVmsActive && (
-          <Marker 
-            position={[epicenter[0], epicenter[1] + 0.0005]} 
-            icon={vmsIcon} 
-          />
-        )}
-        {simClearwayEnforced && (
-          <Marker 
-            position={[epicenter[0] - 0.0004, epicenter[1]]} 
-            icon={clearwayIcon} 
-          />
-        )}
-        {simHeavyVehicleRestricted && (
-          <Marker 
-            position={[epicenter[0], epicenter[1] - 0.0005]} 
-            icon={heavyVehicleIcon} 
-          />
-        )}
+        {simSignalOptimized && <Marker position={[epicenter[0] + 0.0006, epicenter[1]]} icon={signalIcon} />}
+        {simVmsActive && <Marker position={[epicenter[0], epicenter[1] + 0.0007]} icon={vmsIcon} />}
+        {simClearwayEnforced && <Marker position={[epicenter[0] - 0.0006, epicenter[1]]} icon={clearwayIcon} />}
+        {simHeavyVehicleRestricted && <Marker position={[epicenter[0], epicenter[1] - 0.0007]} icon={heavyVehicleIcon} />}
       </>
     )
   }
 
   return (
     <>
-      {/* Floating Checkbox Toggles for Active Routes */}
-      <div className="map-overlay-controls" style={{ top: '160px' }}>
-        <p className="panel__label" style={{ margin: '0 0 6px' }}>Diversion Options</p>
-        {routes.features.map((feature, idx) => {
-          if (feature.properties?.is_blocked) return null
-          
-          const label = feature.properties?.route_label || `Alternate ${idx + 1}`
-          const delay = feature.properties?.estimated_delay_minutes || 0
-          return (
-            <label key={idx} className="control-toggle" style={{ gap: '6px' }}>
-              <input 
-                type="checkbox" 
-                checked={activeRoutes[idx] || false}
-                onChange={() => setActiveRoutes({
-                  ...activeRoutes,
-                  [idx]: !activeRoutes[idx]
-                })}
-              />
-              <span style={{ fontSize: '0.82rem' }}>
-                {label} ({Math.round(delay)}m delay)
-              </span>
-            </label>
-          )
-        })}
+      <div style={{
+        position: 'absolute', top: '160px', left: '12px', zIndex: 1000,
+        background: 'var(--bg-raised)', border: '1px solid var(--border-strong)',
+        borderRadius: '10px', padding: '12px', minWidth: '200px'
+      }}>
+        <p className="text-eyebrow" style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>DIVERSION OPTIONS</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {altFeatures.map((feature, altIndex) => {
+            const label = feature.properties?.route_label || `Alternate ${altIndex + 1}`
+            const delay = feature.properties?.estimated_delay_minutes || 0
+            // Find the original index in the routes array for the toggle state
+            const originalIdx = routes.features.indexOf(feature)
+            return (
+              <label key={originalIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <div style={{ position: 'relative', width: '16px', height: '16px' }}>
+                  <input type="checkbox" checked={activeRoutes[originalIdx] || false} onChange={() => setActiveRoutes({ ...activeRoutes, [originalIdx]: !activeRoutes[originalIdx] })} style={{ opacity: 0, position: 'absolute' }} />
+                  <div style={{
+                    width: '16px', height: '16px', borderRadius: '4px',
+                    border: '1px solid ' + (activeRoutes[originalIdx] ? 'var(--accent)' : 'var(--border)'),
+                    background: activeRoutes[originalIdx] ? 'var(--accent)' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    {activeRoutes[originalIdx] && (
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <span style={{ fontSize: '11px', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                  {label} <span style={{ color: 'var(--text-muted)' }}>({Math.round(delay)}m)</span>
+                </span>
+              </label>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Render the GeoJSON polylines */}
       {routes.features.map((feature, idx) => {
-        // If it is blocked, always render it (don't hide via check boxes)
         if (feature.properties?.is_blocked) {
-          return (
-            <GeoJSON
-              key={idx + '-congested'}
-              data={feature}
-              style={getRouteStyle(idx, feature)}
-              onEachFeature={(f, layer) => {
-                layer.bindPopup(`
-                  <div style="font-family: inherit; color: #1e293b;">
-                    <h4 style="margin: 0; font-size: 0.9rem; color: #ef4444; font-weight: 700;">Congested Corridor</h4>
-                    <p style="margin: 4px 0 0; font-size: 0.8rem;">
-                      This road segment is heavily congested. Diversion routing is active.
-                    </p>
-                  </div>
-                `)
-              }}
-            />
-          )
+          return <GeoJSON key={idx + '-congested'} data={feature} style={getRouteStyle(feature)} />
         }
-
-        // Render alternate routes only if toggled active
         if (!activeRoutes[idx]) return null
-
-        const label = feature.properties?.route_label || `Alternate Route ${idx + 1}`
-        const delay = feature.properties?.estimated_delay_minutes || 0
-        const isFastest = idx === 0
-
-        return (
-          <GeoJSON
-            key={idx + '-' + (feature.properties?.route_label || '')}
-            data={feature}
-            style={getRouteStyle(idx, feature)}
-            onEachFeature={(f, layer) => {
-              layer.bindPopup(`
-                <div style="font-family: inherit; color: #1e293b;">
-                  <h4 style="margin: 0 0 4px; font-size: 0.9rem; color: ${isFastest ? '#10b981' : '#f97316'}; font-weight: 700;">${label}</h4>
-                  <p style="margin: 0; font-size: 0.8rem;">
-                    <strong>Estimated Delay:</strong> ${Math.round(delay)} minutes
-                  </p>
-                </div>
-              `)
-            }}
-          />
-        )
+        return <GeoJSON key={idx + '-' + (feature.properties?.route_label || '')} data={feature} style={getRouteStyle(feature)} />
       })}
 
-      {/* Render barricade and diversion instruction markers */}
       {renderBarricadeMarker()}
       {renderDiversionMarker()}
       {renderPolicyMarkers()}

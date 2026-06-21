@@ -4,8 +4,8 @@ import client from '../../api/client'
 import { useAppStore } from '../../store/appStore'
 
 function ZoneChoropleth({ customScores: propCustomScores = null }) {
-  const { simulationScores, simulationActive, setBaselineScores } = useAppStore()
-  const customScores = propCustomScores || (simulationActive ? simulationScores : null)
+  const { simulationScores, simulationActive, replayScores, replayActive, setBaselineScores } = useAppStore()
+  const customScores = propCustomScores || (replayActive ? replayScores : (simulationActive ? simulationScores : null))
   const [geoJsonData, setGeoJsonData] = useState(null)
   const [maxBaselineScore, setMaxBaselineScore] = useState(1)
   const [loading, setLoading] = useState(true)
