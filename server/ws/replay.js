@@ -81,20 +81,8 @@ module.exports = function replayHandler(ws) {
         })
       );
 
-      // Stream snapshots sequentially with a delay (e.g. 500ms per step)
-      let currentStep = 0;
-      activeInterval = setInterval(() => {
-        if (currentStep >= snapshots.length) {
-          ws.send(
-            JSON.stringify({
-              type: "COMPLETE",
-              event_id: eventId,
-            })
-          );
-          cleanup();
-          return;
-        }
-
+      // Stream snapshots sequentially without artificial delay for instant buffering
+      for (let currentStep = 0; currentStep < snapshots.length; currentStep++) {
         const snapshot = snapshots[currentStep];
         ws.send(
           JSON.stringify({
@@ -105,8 +93,14 @@ module.exports = function replayHandler(ws) {
             progress_percent: Math.round((currentStep / (snapshots.length - 1)) * 100),
           })
         );
-        currentStep++;
-      }, 500); // 500ms interval
+      }
+
+      ws.send(
+        JSON.stringify({
+          type: "COMPLETE",
+          event_id: eventId,
+        })
+      );
     } catch (err) {
       ws.send(
         JSON.stringify({

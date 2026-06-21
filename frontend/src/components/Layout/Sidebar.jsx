@@ -145,10 +145,10 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
 
   return (
     <>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ flex: 1, overflowY: 'hidden', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
         {/* Operations Metrics Card */}
-        <div className="card" style={{ padding: '16px' }}>
+        <div className="card" style={{ padding: '16px', flexShrink: 0 }}>
           <p className="text-eyebrow">LIVE SYSTEM FEEDS</p>
           <h2 className="text-section-heading" style={{ marginBottom: '16px' }}>Operations Metrics</h2>
           <div style={{ display: 'flex' }}>
@@ -165,8 +165,8 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
         </div>
 
         {/* Incident Log Card */}
-        <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
+        <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, minHeight: 0 }}>
+          <div style={{ flexShrink: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <p className="text-eyebrow" style={{ margin: 0 }}>INCIDENT LOG</p>
               <button 
@@ -187,7 +187,7 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
             <h2 className="text-section-heading">Recent Reports</h2>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
             {showAddForm && (
               <form onSubmit={handleCreateCustomEvent} style={{ background: 'var(--bg-inset)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
