@@ -51,7 +51,7 @@ function DelayChart() {
           : 'Showing baseline average congestion scores. Run a simulation to see comparison.'}
       </p>
 
-      <div style={{ width: '100%', flex: 1, minHeight: '240px', marginTop: 'auto' }}>
+      <div style={{ width: '100%', flex: 1, maxHeight: '250px', marginTop: 'auto' }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
             <defs>

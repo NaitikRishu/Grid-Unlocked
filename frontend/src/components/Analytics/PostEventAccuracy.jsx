@@ -23,16 +23,7 @@ function PostEventAccuracy() {
       })
   }, [])
 
-  const getErrorBadge = (absError) => {
-    let color = 'var(--success)'
-    let bg = 'var(--success-dim)'
-    if (absError > 10) {
-      color = 'var(--danger)'
-      bg = 'var(--danger-dim)'
-    } else if (absError >= 5) {
-      color = 'var(--warning)'
-      bg = 'rgba(255, 169, 77, 0.15)'
-    }
+  const getActualDurationBadge = (duration) => {
     return (
       <span style={{
         display: 'inline-block',
@@ -40,12 +31,18 @@ function PostEventAccuracy() {
         borderRadius: '999px',
         fontSize: '0.78rem',
         fontWeight: '700',
-        background: bg,
-        color: color
+        background: 'rgba(255, 255, 255, 0.08)',
+        color: '#e4e4e7'
       }}>
-        {absError} min
+        {Math.round(duration)} min
       </span>
     )
+  }
+
+  const getErrorColor = (absError) => {
+    if (absError > 30) return 'var(--danger)'
+    if (absError > 10 && absError <= 30) return 'var(--warning)'
+    return 'var(--success)'
   }
 
   const cleanData = accuracyData.filter(
@@ -63,15 +60,15 @@ function PostEventAccuracy() {
       </p>
 
       <div style={{ maxHeight: '250px', overflow: 'auto', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '8px' }}>
-        <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
+        <table style={{ width: '100%', minWidth: '800px', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
           <thead>
             <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)', position: 'sticky', top: 0, zIndex: 1 }}>
-              <th style={{ padding: '12px', fontWeight: '600' }}>Event ID</th>
-              <th style={{ padding: '12px', fontWeight: '600' }}>Type</th>
-              <th style={{ padding: '12px', fontWeight: '600' }}>Zone ID</th>
-              <th style={{ padding: '12px', fontWeight: '600' }}>Predicted Duration</th>
-              <th style={{ padding: '12px', fontWeight: '600' }}>Actual Duration</th>
-              <th style={{ padding: '12px', fontWeight: '600' }}>Absolute Error (min)</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '15%' }}>Event ID</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '15%' }}>Type</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '15%' }}>Zone ID</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Predicted Duration</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '15%' }}>Actual Duration</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Absolute Error (min)</th>
             </tr>
           </thead>
           <tbody>
@@ -107,9 +104,11 @@ function PostEventAccuracy() {
                   <td style={{ padding: '10px 12px', textTransform: 'capitalize', color: 'var(--text-secondary)' }}>{row.event_type}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>Zone {row.zone_id}</td>
                   <td style={{ padding: '10px 12px' }}>{row.predicted_duration} mins</td>
-                  <td style={{ padding: '10px 12px' }}>{row.actual_duration} mins</td>
                   <td style={{ padding: '10px 12px' }}>
-                    {getErrorBadge(Math.round(Math.abs(row.predicted_duration - row.actual_duration)))}
+                    {getActualDurationBadge(row.actual_duration)}
+                  </td>
+                  <td style={{ padding: '10px 12px', fontWeight: '700', color: getErrorColor(Math.abs(row.predicted_duration - row.actual_duration)) }}>
+                    {Math.abs(row.predicted_duration - row.actual_duration).toFixed(2)}
                   </td>
                 </tr>
               ))

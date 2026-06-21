@@ -62,7 +62,7 @@ function ZoneRankTable() {
           : 'Showing baseline zone average congestion. Select an event and run simulation to see resource deployments.'}
       </p>
 
-      <div style={{ flex: 1, minHeight: '240px', overflowY: 'auto', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '8px', marginTop: 'auto' }}>
+      <div style={{ flex: 1, maxHeight: '250px', overflowY: 'auto', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '8px', marginTop: 'auto' }}>
         <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
           <thead>
             <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)', position: 'sticky', top: 0, zIndex: 1 }}>
