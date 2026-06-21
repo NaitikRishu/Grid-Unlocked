@@ -71,36 +71,24 @@ function App() {
 
   return (
     <main className="app-shell">
-      <Header />
-
-
-
-      {/* Tabs Navigation Switcher */}
-      <section className="tab-navigation-container">
-        <button 
-          onClick={() => setActiveTab('operations')}
-          className={`chip ${activeTab === 'operations' ? 'is-active' : ''}`}
-        >
-          🚦 Live Operations Map
-        </button>
-        <button 
-          onClick={() => setActiveTab('analytics')}
-          className={`chip ${activeTab === 'analytics' ? 'is-active' : ''}`}
-        >
-          📊 Analytics Dashboard
-        </button>
-      </section>
+      <Header activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === 'operations' ? (
         <section className="workspace">
-          <Sidebar selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
-          <BengaluruMap selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
+          <aside className="sidebar sidebar--left">
+            <Sidebar selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
+          </aside>
+          
+          <section className="map-container-wrapper">
+            <BengaluruMap selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
+          </section>
+
           <aside className="sidebar sidebar--right">
             <WhatIfPanel selectedEvent={selectedEvent} />
           </aside>
         </section>
       ) : (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <section className="analytics-workspace">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px' }}>
             <DelayChart />
             <ZoneRankTable />
@@ -112,4 +100,4 @@ function App() {
   )
 }
 
-export default App;
+export default App

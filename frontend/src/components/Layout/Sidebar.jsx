@@ -30,13 +30,11 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
       })
   }, [])
 
-  // Sync store coordinates to form inputs
   useEffect(() => {
     if (isPlanning) {
       setCustomLat(planningLat.toFixed(6))
       setCustomLon(planningLon.toFixed(6))
       
-      // If the coordinates differ from preset standards, switch to custom
       const isPreset = (
         (planningLat === 12.9784 && planningLon === 77.5994) ||
         (planningLat === 13.0450 && planningLon === 77.6270) ||
@@ -134,11 +132,8 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
         status: response.data.status
       }
       
-      // Prepend to list
       setEvents((prev) => [newEvent, ...prev])
-      // Select the new event immediately
       onSelectEvent(newEvent.id)
-      // Reset form
       setShowAddForm(false)
       setIsPlanning(false)
     } catch (err) {
@@ -148,165 +143,202 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
     }
   }
 
-  const getPriorityClass = (priority) => {
-    if (!priority) return 'badge--low'
-    const p = priority.toLowerCase()
-    if (p === 'high') return 'badge--high'
-    if (p === 'medium') return 'badge--medium'
-    return 'badge--low'
-  }
-
   return (
-    <aside className="sidebar">
-      <div className="panel panel--glow">
-        <p className="panel__label">Live System Feeds</p>
-        <h2>Operations Metrics</h2>
-        <div className="stats-grid">
-          <div className="stat-box">
-            <span className="stat-val">243</span>
-            <span className="stat-lbl">Active Wards</span>
-          </div>
-          <div className="stat-box">
-            <span className="stat-val">10</span>
-            <span className="stat-lbl">Live Feeds</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="panel panel--scrollable">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <p className="panel__label" style={{ margin: 0 }}>Incident Log</p>
-          <button 
-            onClick={toggleAddForm}
-            className="refresh-btn"
-            style={{ fontSize: '0.76rem', color: '#ec4899', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: '700' }}
-          >
-            {showAddForm ? '[ Cancel ]' : '[ + Plan Event ]'}
-          </button>
-        </div>
-        <h2>Recent Reports</h2>
-
-        <div className="panel-scroll-content">
-          {showAddForm && (
-            <form onSubmit={handleCreateCustomEvent} className="dispatch-form">
-              <div className="dispatch-form__group">
-                <label className="dispatch-form__label">Event Cause / Title</label>
-                <input 
-                  type="text" 
-                  value={eventCause} 
-                  onChange={(e) => setEventCause(e.target.value)} 
-                  required
-                  className="dispatch-form__input"
-                />
-              </div>
-
-              <div className="dispatch-form__group">
-                <label className="dispatch-form__label">Location Preset</label>
-                <select 
-                  value={locationPreset} 
-                  onChange={(e) => handlePresetChange(e.target.value)}
-                  className="dispatch-form__select"
-                >
-                  <option value="chinnaswamy">Chinnaswamy Stadium (IPL)</option>
-                  <option value="manyata">Manyata Tech Park</option>
-                  <option value="ecity">Electronic City Phase 1</option>
-                  <option value="custom">Custom Coordinates</option>
-                </select>
-              </div>
-
-              {locationPreset === 'custom' && (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <div className="dispatch-form__group" style={{ flex: 1 }}>
-                    <label className="dispatch-form__label">Lat</label>
-                    <input 
-                      type="text" 
-                      value={customLat} 
-                      onChange={(e) => handleLatChange(e.target.value)} 
-                      className="dispatch-form__input"
-                    />
-                  </div>
-                  <div className="dispatch-form__group" style={{ flex: 1 }}>
-                    <label className="dispatch-form__label">Lon</label>
-                    <input 
-                      type="text" 
-                      value={customLon} 
-                      onChange={(e) => handleLonChange(e.target.value)} 
-                      className="dispatch-form__input"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="dispatch-form__group">
-                <label className="dispatch-form__label">Priority</label>
-                <select 
-                  value={priority} 
-                  onChange={(e) => setPriority(e.target.value)}
-                  className="dispatch-form__select"
-                >
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="dispatch-form__btn"
-              >
-                {isSubmitting ? 'Registering...' : 'Add & Plan Incident'}
-              </button>
-            </form>
-          )}
-          
-          {loading ? (
-            <p className="panel__text">Loading incident log...</p>
-          ) : events.length === 0 ? (
-            <p className="panel__text">No active incidents found.</p>
-          ) : (
-            <div className="event-list">
-              {events.map((event) => (
-                <div 
-                  key={event.id} 
-                  className={`event-card ${selectedEventId === event.id ? 'is-active' : ''}`}
-                  onClick={() => onSelectEvent(event.id)}
-                >
-                  <div className="event-card__header">
-                    <span className={`badge ${getPriorityClass(event.priority)}`}>
-                      {event.priority || 'low'}
-                    </span>
-                    <span className="event-card__time">
-                      {new Date(event.start_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                  <h3>{event.event_type.replace('_', ' ')}</h3>
-                  <p className="event-card__meta">
-                    <span>Ward {event.zone_id || 'N/A'}</span>
-                    <span>•</span>
-                    <span>{event.status || 'active'}</span>
-                  </p>
-                </div>
-              ))}
+    <>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
+        {/* Operations Metrics Card */}
+        <div className="card" style={{ padding: '16px' }}>
+          <p className="text-eyebrow">LIVE SYSTEM FEEDS</p>
+          <h2 className="text-section-heading" style={{ marginBottom: '16px' }}>Operations Metrics</h2>
+          <div style={{ display: 'flex' }}>
+            <div style={{ flex: 1 }}>
+              <p className="text-metric-large">243</p>
+              <p className="text-eyebrow" style={{ marginTop: '4px' }}>ACTIVE WARDS</p>
             </div>
-          )}
+            <div style={{ width: '1px', background: 'var(--border)', margin: '0 16px' }} />
+            <div style={{ flex: 1 }}>
+              <p className="text-metric-large">10</p>
+              <p className="text-eyebrow" style={{ marginTop: '4px' }}>LIVE FEEDS</p>
+            </div>
+          </div>
         </div>
+
+        {/* Incident Log Card */}
+        <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <p className="text-eyebrow" style={{ margin: 0 }}>INCIDENT LOG</p>
+              <button 
+                onClick={toggleAddForm}
+                style={{ 
+                  color: 'var(--accent)', 
+                  background: 'none', 
+                  border: 'none', 
+                  fontSize: '11px', 
+                  fontWeight: 500, 
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                {showAddForm ? 'Cancel' : '+ Plan Event'}
+              </button>
+            </div>
+            <h2 className="text-section-heading">Recent Reports</h2>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {showAddForm && (
+              <form onSubmit={handleCreateCustomEvent} style={{ background: 'var(--bg-inset)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label className="text-eyebrow">Event Cause</label>
+                  <input 
+                    type="text" 
+                    value={eventCause} 
+                    onChange={(e) => setEventCause(e.target.value)} 
+                    required
+                    style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '6px 8px', borderRadius: '4px', fontSize: '12px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label className="text-eyebrow">Preset</label>
+                  <select 
+                    value={locationPreset} 
+                    onChange={(e) => handlePresetChange(e.target.value)}
+                    style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '6px 8px', borderRadius: '4px', fontSize: '12px' }}
+                  >
+                    <option value="chinnaswamy">Chinnaswamy Stadium</option>
+                    <option value="manyata">Manyata Tech Park</option>
+                    <option value="ecity">Electronic City Phase 1</option>
+                    <option value="custom">Custom Coordinates</option>
+                  </select>
+                </div>
+
+                {locationPreset === 'custom' && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label className="text-eyebrow">Lat</label>
+                      <input 
+                        type="text" 
+                        value={customLat} 
+                        onChange={(e) => handleLatChange(e.target.value)} 
+                        style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '6px 8px', borderRadius: '4px', fontSize: '12px' }}
+                      />
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <label className="text-eyebrow">Lon</label>
+                      <input 
+                        type="text" 
+                        value={customLon} 
+                        onChange={(e) => handleLonChange(e.target.value)} 
+                        style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '6px 8px', borderRadius: '4px', fontSize: '12px' }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label className="text-eyebrow">Priority</label>
+                  <select 
+                    value={priority} 
+                    onChange={(e) => setPriority(e.target.value)}
+                    style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '6px 8px', borderRadius: '4px', fontSize: '12px' }}
+                  >
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  style={{ background: 'var(--accent)', color: '#ffffff', border: 'none', padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
+                >
+                  {isSubmitting ? 'Registering...' : 'Add & Plan Incident'}
+                </button>
+              </form>
+            )}
+            
+            {loading ? (
+              <p className="text-body">Loading incident log...</p>
+            ) : events.length === 0 ? (
+              <p className="text-body">No active incidents found.</p>
+            ) : (
+              events.map((event) => {
+                const isActive = selectedEventId === event.id;
+                const isHigh = event.priority?.toLowerCase() === 'high';
+                return (
+                  <div 
+                    key={event.id} 
+                    onClick={() => onSelectEvent(event.id)}
+                    style={{
+                      background: isActive ? (isHigh ? 'var(--danger-dim)' : 'var(--accent-dim)') : 'var(--bg-raised)',
+                      borderLeft: isHigh ? '2px solid var(--danger)' : '2px solid var(--warning)',
+                      borderRight: '1px solid transparent',
+                      borderTop: '1px solid transparent',
+                      borderBottom: '1px solid transparent',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.12s ease',
+                      opacity: isActive ? 1 : 0.85,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <span className="badge-text" style={{
+                        background: isHigh ? 'var(--danger-dim)' : 'rgba(255, 159, 10, 0.15)',
+                        color: isHigh ? 'var(--danger)' : 'var(--warning)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                      }}>
+                        {event.priority || 'LOW'}
+                      </span>
+                      <span className="text-mono" style={{ color: 'var(--text-muted)' }}>
+                        {new Date(event.start_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                      </span>
+                    </div>
+                    <p style={{ margin: '0 0 2px 0', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {event.event_type.replace('_', ' ')}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      Ward {event.zone_id || 'N/A'} • {event.status || 'Active'}
+                    </p>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+
       </div>
 
-      <div className="sidebar__footer">
-        <div className="footer-status">
-          <span className="pulse-indicator"></span>
-          <span>System Uptime: 99.98%</span>
+      {/* Footer */}
+      <div style={{ borderTop: '1px solid var(--border)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: '6px', height: '6px', background: 'var(--success)', borderRadius: '50%', boxShadow: '0 0 0 3px rgba(48,209,88,0.15)' }} />
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>System Uptime: 99.98%</span>
         </div>
-        <div className="footer-meta">
-          <span>v2.1.0-noir</span>
-          <span>•</span>
-          <button className="refresh-btn" onClick={() => window.location.reload()}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>v2.2.0</span>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{ 
+              background: 'transparent',
+              border: '1px solid var(--border-strong)',
+              color: 'var(--text-secondary)',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              fontSize: '11px',
+              cursor: 'pointer'
+            }}
+          >
             Refresh Feeds
           </button>
         </div>
       </div>
-    </aside>
+    </>
   )
 }
 
