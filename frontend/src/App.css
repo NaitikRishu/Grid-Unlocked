@@ -499,21 +499,26 @@
   }
 }
 
-/* Table header sweep border */
+/* Table header sweep border — applied to first th to avoid breaking table column alignment */
 .table-header-sweep {
+  /* no position:relative here — that breaks <tr> column alignment */
+}
+
+.table-header-sweep th:first-child {
   position: relative;
 }
 
-.table-header-sweep::before {
+.table-header-sweep th:first-child::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
+  right: 0;
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
   background-size: 200% 100%;
   animation: sweepBorder 3s infinite linear;
+  pointer-events: none;
 }
 
 @keyframes sweepBorder {
