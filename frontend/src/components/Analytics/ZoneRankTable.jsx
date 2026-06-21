@@ -63,14 +63,14 @@ function ZoneRankTable() {
       </p>
 
       <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '8px' }}>
-        <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
+        <table style={{ width: '100%', tableLayout: 'auto', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
           <thead>
-            <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)', position: 'sticky', top: 0, zIndex: 1 }}>
-              <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Zone ID</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Congestion Score</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Police Officers</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Barricades</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '20%' }}>Top Event Type</th>
+            <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)' }}>
+              <th style={{ padding: '12px', fontWeight: '600', width: '20%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Zone ID</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '20%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Congestion Score</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '20%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Police Officers</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '20%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Barricades</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '20%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Top Event Type</th>
             </tr>
           </thead>
           <tbody>

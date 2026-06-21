@@ -63,15 +63,15 @@ function PostEventAccuracy() {
       </p>
 
       <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '8px' }}>
-        <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
+        <table style={{ width: '100%', tableLayout: 'auto', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
           <thead>
-            <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)', position: 'sticky', top: 0, zIndex: 1 }}>
-              <th style={{ padding: '12px', fontWeight: '600', width: '18%' }}>Event ID</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '14%' }}>Type</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '14%' }}>Zone ID</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '18%' }}>Predicted Duration</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '18%' }}>Actual Duration</th>
-              <th style={{ padding: '12px', fontWeight: '600', width: '18%' }}>Absolute Error (min)</th>
+            <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)' }}>
+              <th style={{ padding: '12px', fontWeight: '600', width: '18%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Event ID</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '14%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Type</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '14%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Zone ID</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '18%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Predicted Duration</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '18%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Actual Duration</th>
+              <th style={{ padding: '12px', fontWeight: '600', width: '18%', position: 'sticky', top: 0, zIndex: 1, background: 'rgba(8, 15, 40, 0.95)' }}>Absolute Error (min)</th>
             </tr>
           </thead>
           <tbody>
