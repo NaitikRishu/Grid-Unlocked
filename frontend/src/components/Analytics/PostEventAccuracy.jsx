@@ -73,19 +73,19 @@ function PostEventAccuracy() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                <td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                   Loading evaluation logs...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--danger)' }}>
+                <td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: 'var(--danger)' }}>
                   {error}
                 </td>
               </tr>
             ) : cleanData.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                <td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                   No historical event predictions found.
                 </td>
               </tr>
