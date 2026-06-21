@@ -203,8 +203,8 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
             <h2 className="text-section-heading">Recent Reports</h2>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
-            {showAddForm && (
+          {showAddForm && (
+            <div style={{ flexShrink: 0, maxHeight: '280px', overflowY: 'auto', paddingRight: '4px', marginBottom: '8px' }}>
               <form onSubmit={handleCreateCustomEvent} style={{ background: 'var(--bg-inset)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label className="text-eyebrow">Event Cause</label>
@@ -270,13 +270,17 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  style={{ background: 'var(--accent)', color: '#ffffff', border: 'none', padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', opacity: isSubmitting ? 0.7 : 1 }}
+                  style={{ background: 'var(--accent)', color: '#000000', border: 'none', padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', opacity: isSubmitting ? 0.7 : 1, minWidth: 0, width: '100%' }}
                 >
-                  {isSubmitting ? 'Registering...' : 'Add & Plan Incident'}
+                  <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {isSubmitting ? 'Registering...' : 'Add & Plan Incident'}
+                  </span>
                 </button>
               </form>
-            )}
+            </div>
+          )}
             
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
             {loading ? (
               <p className="text-body">Loading incident log...</p>
             ) : events.length === 0 ? (

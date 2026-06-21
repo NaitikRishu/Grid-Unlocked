@@ -53,7 +53,7 @@ function ZoneRankTable() {
   }, [baselineScores, simulationScores, resourceAllocation, simulationActive, zoneSummaries])
 
   return (
-    <div className="panel panel--glow" style={{ padding: '24px', flex: '1', minHeight: '340px', background: 'rgba(8, 15, 40, 0.7)', backdropFilter: 'blur(16px)', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)' }}>
+    <div className="panel panel--glow" style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', background: 'rgba(8, 15, 40, 0.7)', backdropFilter: 'blur(16px)', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)' }}>
       <p className="panel__label" style={{ color: 'var(--accent)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px 0', fontWeight: 'bold' }}>Resource Allocations</p>
       <h2 style={{ margin: '0 0 6px 0', color: '#ffffff', fontSize: '16px', fontWeight: '700' }}>Zone Congestion Ranking</h2>
       <p className="panel__text" style={{ marginBottom: '16px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
@@ -62,7 +62,7 @@ function ZoneRankTable() {
           : 'Showing baseline zone average congestion. Select an event and run simulation to see resource deployments.'}
       </p>
 
-      <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '8px' }}>
+      <div style={{ flex: 1, minHeight: '240px', overflowY: 'auto', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '8px', marginTop: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
           <thead>
             <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)', position: 'sticky', top: 0, zIndex: 1 }}>

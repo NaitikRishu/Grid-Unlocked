@@ -410,23 +410,26 @@ EXPECTED IMPACT OUTCOME:
           <p style={{ color: 'var(--danger)', fontSize: '12px', margin: '0' }}>{error}</p>
         )}
 
-        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '8px', width: '100%' }}>
           <button 
             onClick={handleAutoRecommend} 
             disabled={isRecommending || isSimulating}
             style={{ 
               flex: 1,
+              minWidth: 0,
               fontWeight: 500,
               fontSize: '12px',
               color: 'var(--text-primary)',
               border: '1px solid var(--border-strong)',
               background: 'transparent',
-              padding: '10px 0',
+              padding: '10px 4px',
               borderRadius: '8px',
               cursor: (isRecommending || isSimulating) ? 'not-allowed' : 'pointer'
             }}
           >
-            {isRecommending ? 'Analyzing...' : 'Auto-Recommend'}
+            <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {isRecommending ? 'Analyzing...' : 'Auto-Recommend'}
+            </span>
           </button>
           
           <button 
@@ -434,18 +437,21 @@ EXPECTED IMPACT OUTCOME:
             disabled={isSimulating || isRecommending}
             style={{ 
               flex: 1.2,
+              minWidth: 0,
               fontWeight: 600,
               fontSize: '12px',
-              color: '#ffffff',
+              color: '#000000',
               border: 'none',
               background: 'var(--accent)',
-              padding: '10px 0',
+              padding: '10px 4px',
               borderRadius: '8px',
               cursor: (isSimulating || isRecommending) ? 'not-allowed' : 'pointer',
               opacity: (isSimulating || isRecommending) ? 0.7 : 1
             }}
           >
-            {isSimulating ? 'Simulating...' : 'Run Simulation'}
+            <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {isSimulating ? 'Simulating...' : 'Run Simulation'}
+            </span>
           </button>
         </div>
 

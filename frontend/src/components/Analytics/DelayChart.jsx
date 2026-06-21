@@ -42,16 +42,16 @@ function DelayChart() {
   }
 
   return (
-    <div className="panel panel--glow" style={{ padding: '24px', minHeight: '340px', background: 'rgba(8, 15, 40, 0.7)', backdropFilter: 'blur(16px)', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)' }}>
+    <div className="panel panel--glow" style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column', background: 'rgba(8, 15, 40, 0.7)', backdropFilter: 'blur(16px)', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)' }}>
       <p className="panel__label" style={{ color: 'var(--accent)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px 0', fontWeight: 'bold' }}>Analytics Visualization</p>
       <h2 style={{ margin: '0 0 6px 0', color: '#ffffff', fontSize: '16px', fontWeight: '700' }}>Top 5 Congested Zones</h2>
-      <p className="panel__text" style={{ marginBottom: '20px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+      <p className="panel__text" style={{ marginBottom: '16px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
         {simulationActive 
           ? 'Comparing baseline average congestion vs simulated what-if scenario scores.' 
           : 'Showing baseline average congestion scores. Run a simulation to see comparison.'}
       </p>
 
-      <div style={{ width: '100%', height: '240px', marginTop: '10px' }}>
+      <div style={{ width: '100%', flex: 1, minHeight: '240px', marginTop: 'auto' }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
             <defs>
