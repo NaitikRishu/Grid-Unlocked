@@ -66,6 +66,7 @@ function EventMarker({ event, onEventClick }) {
   const { replayProgress, replayActive } = useAppStore()
 
   const isThisEventPlaying = isPlaying && replayActive
+  const eventIcon = event.priority === 'high' ? highSeverityIcon : lowSeverityIcon
 
   return (
     <Marker 
