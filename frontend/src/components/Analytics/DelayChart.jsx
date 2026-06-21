@@ -55,48 +55,72 @@ function DelayChart() {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
             <defs>
-              <linearGradient id="cyanGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ffffff" />
-                <stop offset="100%" stopColor="#6b7280" />
+              {/* Baseline: Cyan → Electric Blue → Violet */}
+              <linearGradient id="baselineGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#00cfff" stopOpacity={1} />
+                <stop offset="50%" stopColor="#4f8ef7" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#7b61ff" stopOpacity={0.7} />
               </linearGradient>
-              <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              {/* Simulated: Amber → Orange → Red */}
+              <linearGradient id="simulatedGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ffd166" stopOpacity={1} />
+                <stop offset="50%" stopColor="#ff8c42" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#ef233c" stopOpacity={0.75} />
+              </linearGradient>
+              {/* Cyan glow filter for baseline bars */}
+              <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feFlood floodColor="#00cfff" floodOpacity="0.4" result="glowColor" />
+                <feComposite in="glowColor" in2="blur" operator="in" result="glow" />
+                <feMerge>
+                  <feMergeNode in="glow" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              {/* Amber glow filter for simulated bars */}
+              <filter id="amberGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feFlood floodColor="#ff8c42" floodOpacity="0.35" result="glowColor" />
+                <feComposite in="glowColor" in2="blur" operator="in" result="glow" />
+                <feMerge>
+                  <feMergeNode in="glow" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
               </filter>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.04)" vertical={false} />
-            <XAxis 
-              dataKey="name" 
-              stroke="var(--text-secondary)" 
+            <XAxis
+              dataKey="name"
+              stroke="var(--text-secondary)"
               fontSize={11}
               tickLine={false}
               axisLine={false}
             />
-            <YAxis 
-              stroke="var(--text-secondary)" 
+            <YAxis
+              stroke="var(--text-secondary)"
               fontSize={11}
               tickLine={false}
               axisLine={false}
             />
-            <Tooltip 
-              contentStyle={{ 
-                background: 'rgba(8, 15, 40, 0.75)', 
+            <Tooltip
+              contentStyle={{
+                background: 'rgba(8, 15, 40, 0.85)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
-                borderColor: 'rgba(0, 207, 255, 0.12)', 
+                borderColor: 'rgba(0, 207, 255, 0.2)',
                 borderRadius: '8px',
                 color: '#e8f4f8',
                 fontSize: '0.8rem',
                 fontFamily: 'inherit',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
-              }} 
+                boxShadow: '0 4px 20px rgba(0, 207, 255, 0.15)'
+              }}
             />
-            <Legend 
+            <Legend
               wrapperStyle={{ fontSize: '0.76rem', paddingTop: '10px', color: 'var(--text-secondary)' }}
               iconSize={10}
             />
-            <Bar dataKey="Baseline Congestion" fill="url(#cyanGradient)" radius={[4, 4, 0, 0]} barSize={16} isAnimationActive={true} animationDuration={1200} />
-            <Bar dataKey="Simulated Congestion" fill="#ffffff" filter="url(#softGlow)" radius={[4, 4, 0, 0]} barSize={16} isAnimationActive={true} animationDuration={1200} />
+            <Bar dataKey="Baseline Congestion" fill="url(#baselineGradient)" filter="url(#cyanGlow)" radius={[4, 4, 0, 0]} barSize={16} isAnimationActive={true} animationDuration={1200} />
+            <Bar dataKey="Simulated Congestion" fill="url(#simulatedGradient)" filter="url(#amberGlow)" radius={[4, 4, 0, 0]} barSize={16} isAnimationActive={true} animationDuration={1200} />
           </BarChart>
         </ResponsiveContainer>
       </div>
