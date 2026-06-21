@@ -1,0 +1,342 @@
+import { useState, useEffect } from 'react'
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import ZoneChoropleth from './ZoneChoropleth'
+import EventPin from './EventPin'
+import ViolationHeatmap from './ViolationHeatmap'
+import DiversionRoutes from './DiversionRoutes'
+import client from '../../api/client'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
+import { useAppStore } from '../../store/appStore'
+
+const bengaluruCenter = [12.9716, 77.5946]
+
+const planningPinIcon = L.divIcon({
+  html: `
+    <div style="
+      width: 20px;
+      height: 20px;
+      background: rgba(59, 158, 255, 0.12);
+      border: 1.5px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
+    ">
+      <div style="
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+      "></div>
+    </div>
+  `,
+  className: 'custom-planning-pin',
+  iconSize: [0, 0],
+  iconAnchor: [0, 0],
+})
+
+function MapEvents({ isPlanning, setPlanningCoords }) {
+  useMapEvents({
+    click(e) {
+      if (isPlanning) {
+        setPlanningCoords(e.latlng.lat, e.latlng.lng)
+      }
+    },
+  })
+  return null
+}
+
+function BengaluruMap({ selectedEventId, onSelectEvent }) {
+  const {
+    simulationActive,
+    simulationRoutes,
+    simulationDelaySaved,
+    isPlanning,
+    planningLat,
+    planningLon,
+    setPlanningCoords,
+  } = useAppStore()
+
+  const mapProvider = 'osm'
+  const [showZones, setShowZones] = useState(true)
+  const [showEvents, setShowEvents] = useState(true)
+  const [showViolations, setShowViolations] = useState(false)
+  const [selectedRoutes, setSelectedRoutes] = useState(null)
+
+  const [replaySnapshots, setReplaySnapshots] = useState(null)
+  const [replayStep, setReplayStep] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isBuffering, setIsBuffering] = useState(false)
+  const [replayError, setReplayError] = useState(null)
+
+  useEffect(() => {
+    if (selectedEventId) {
+      client
+        .get(`/routes/${selectedEventId}`)
+        .then((res) => setSelectedRoutes(res.data))
+        .catch((err) => {
+          console.warn(`Failed to fetch alternate routes for event ${selectedEventId}:`, err)
+          setSelectedRoutes(null)
+        })
+    } else {
+      setSelectedRoutes(null)
+    }
+  }, [selectedEventId])
+
+  useEffect(() => {
+    setReplaySnapshots(null)
+    setReplayStep(0)
+    setIsPlaying(false)
+    setReplayError(null)
+    setIsBuffering(false)
+
+    if (!selectedEventId) return
+
+    if (selectedEventId.startsWith('CUSTOM')) {
+      setReplayError('Replay timeline only available for historical incidents.')
+      return
+    }
+
+    setIsBuffering(true)
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://'
+    const ws = new WebSocket(`${protocol}${window.location.host}/replay`)
+    const buffer = []
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ event_id: selectedEventId }))
+    }
+
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data)
+        if (msg.type === 'SNAPSHOT') {
+          buffer.push(msg.data)
+        } else if (msg.type === 'COMPLETE') {
+          setReplaySnapshots(buffer)
+          setIsBuffering(false)
+          ws.close()
+        } else if (msg.type === 'ERROR') {
+          setReplayError(msg.message)
+          setIsBuffering(false)
+          ws.close()
+        }
+      } catch (err) {
+        console.error('Error parsing WS replay message:', err)
+        setReplayError('Error reading replay stream.')
+        setIsBuffering(false)
+      }
+    }
+
+    ws.onerror = () => {
+      setReplayError('Replay service unreachable.')
+      setIsBuffering(false)
+    }
+
+    return () => {
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close()
+      }
+    }
+  }, [selectedEventId])
+
+  useEffect(() => {
+    let interval = null
+    if (isPlaying && replaySnapshots && replaySnapshots.length > 0) {
+      interval = setInterval(() => {
+        setReplayStep((prev) => {
+          if (prev >= replaySnapshots.length - 1) {
+            setIsPlaying(false)
+            return prev
+          }
+          return prev + 1
+        })
+      }, 750)
+    }
+    return () => clearInterval(interval)
+  }, [isPlaying, replaySnapshots])
+
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+  const attribution = '&copy; OpenStreetMap contributors &copy; CARTO'
+
+  const handleTileError = () => {
+    console.warn('Map tile layer failed.')
+  }
+
+  const ToggleSwitchLight = ({ checked, onChange }) => (
+    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+      <input type="checkbox" checked={checked} onChange={onChange} style={{ opacity: 0, position: 'absolute' }} />
+      <div style={{
+        width: '28px', height: '16px', borderRadius: '8px',
+        background: checked ? 'var(--accent)' : 'rgba(120,120,128,0.2)',
+        transition: 'background 0.15s ease', position: 'relative',
+        boxShadow: checked ? '0 0 8px rgba(0, 212, 255, 0.6)' : 'none'
+      }}>
+        <div style={{
+          position: 'absolute', top: '2px', left: '2px', width: '12px', height: '12px',
+          borderRadius: '50%', background: '#ffffff',
+          transition: 'transform 0.15s ease', transform: checked ? 'translateX(12px)' : 'translateX(0px)',
+        }} />
+      </div>
+    </label>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Header */}
+      <div style={{ 
+        padding: '12px 20px', 
+        background: 'var(--bg-surface)', 
+        borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 
+      }}>
+        <div>
+          <p className="text-eyebrow" style={{ margin: '0 0 2px' }}>OPERATIONS</p>
+          <h2 className="text-section-heading" style={{ margin: 0, fontSize: '15px' }}>Bengaluru Live View</h2>
+        </div>
+        <div style={{ 
+          display: 'flex', alignItems: 'center', gap: '6px', 
+          padding: '4px 10px', border: '1px solid var(--border-strong)', borderRadius: '20px',
+          background: 'transparent'
+        }}>
+          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--warning)' }} />
+          <span className="text-mono" style={{ color: 'var(--text-secondary)' }}>OSM Fallback</span>
+        </div>
+      </div>
+
+      {/* Map Content */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#050B18' }}>
+        <div className="map-pulse-overlay"></div>
+        
+        {/* Layer Panel (Floating Dark) */}
+        <div style={{
+          position: 'absolute', top: '12px', right: '12px', zIndex: 1000,
+          background: 'rgba(13, 27, 42, 0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(0, 212, 255, 0.25)', borderRadius: '10px', padding: '12px 14px',
+          display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '150px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)'
+        }}>
+          <p className="text-eyebrow" style={{ color: 'var(--text-secondary)' }}>LAYERS</p>
+          {[
+            { label: 'Choropleth', state: showZones, set: setShowZones },
+            { label: 'Events', state: showEvents, set: setShowEvents },
+            { label: 'Heatmap', state: showViolations, set: setShowViolations },
+          ].map(({ label, state, set }) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500 }}>{label}</span>
+              <ToggleSwitchLight checked={state} onChange={() => set(!state)} />
+            </div>
+          ))}
+        </div>
+
+        {/* Simulation Banner (Floating Dark) */}
+        {simulationActive && (
+          <div style={{
+            position: 'absolute', top: '12px', left: '12px', zIndex: 1000,
+            background: 'rgba(13, 27, 42, 0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(0, 212, 255, 0.25)', borderRadius: '10px', padding: '12px 16px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)'
+          }}>
+            <p className="text-eyebrow" style={{ color: 'var(--text-secondary)' }}>SIMULATION</p>
+            <p style={{ fontSize: '20px', fontWeight: 600, color: 'var(--accent)', margin: '2px 0 0', letterSpacing: '-0.02em', textShadow: '0 0 8px rgba(0, 212, 255, 0.4)' }}>
+              +{Math.round(simulationDelaySaved)} min
+            </p>
+            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>saved via optimised routing</p>
+          </div>
+        )}
+
+        <MapContainer center={bengaluruCenter} zoom={13} scrollWheelZoom style={{ width: '100%', height: '100%' }}>
+          <TileLayer
+            key={mapProvider}
+            attribution={attribution}
+            url={tileUrl}
+            eventHandlers={{ tileerror: handleTileError }}
+          />
+          <MapEvents isPlanning={isPlanning} setPlanningCoords={setPlanningCoords} />
+
+          {isPlanning && (
+            <Marker
+              position={[planningLat, planningLon]}
+              draggable
+              icon={planningPinIcon}
+              eventHandlers={{
+                dragend: (e) => {
+                  const { lat, lng } = e.target.getLatLng()
+                  setPlanningCoords(lat, lng)
+                },
+              }}
+            />
+          )}
+
+          {showZones && (
+            <ZoneChoropleth
+              customScores={replaySnapshots ? replaySnapshots[replayStep]?.zone_scores : null}
+            />
+          )}
+          {showEvents && <EventPin onEventClick={onSelectEvent} />}
+          {showViolations && <ViolationHeatmap />}
+          {simulationActive
+            ? simulationRoutes && <DiversionRoutes routes={simulationRoutes} />
+            : selectedRoutes && <DiversionRoutes routes={selectedRoutes} />}
+        </MapContainer>
+      </div>
+
+      {/* Replay Bar (Below Map) */}
+      {selectedEventId && !replayError && (
+        <div style={{
+          padding: '10px 16px', background: 'var(--bg-surface)', borderTop: '1px solid var(--border)', flexShrink: 0
+        }}>
+          {isBuffering ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', padding: '6px 0' }}>
+              <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--text-secondary)' }} />
+              <span className="text-mono" style={{ color: 'var(--text-secondary)' }}>LOADING REPLAY TIMELINE...</span>
+            </div>
+          ) : replaySnapshots ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                style={{ 
+                  fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                  color: isPlaying ? 'var(--bg-base)' : 'var(--text-primary)', 
+                  background: isPlaying ? 'var(--accent)' : 'transparent',
+                  border: isPlaying ? '1px solid var(--accent)' : '1px solid var(--border-strong)', 
+                  borderRadius: '6px', padding: '6px 16px', cursor: 'pointer', minWidth: '70px', textAlign: 'center'
+                }}
+              >
+                {isPlaying ? 'PAUSE' : 'PLAY'}
+              </button>
+              <button
+                onClick={() => { setIsPlaying(false); setReplayStep(0) }}
+                style={{
+                  fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                  color: 'var(--text-secondary)', background: 'transparent',
+                  border: '1px solid var(--border)', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer'
+                }}
+              >
+                RESET
+              </button>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px', margin: '0 8px' }}>
+                <input
+                  type="range" min="0" max={replaySnapshots.length - 1} value={replayStep}
+                  onChange={(e) => { setIsPlaying(false); setReplayStep(parseInt(e.target.value)) }}
+                  style={{ flex: 1, accentColor: 'var(--accent)', height: '2px', cursor: 'pointer' }}
+                />
+                <span className="text-mono" style={{ color: 'var(--text-secondary)', minWidth: '80px', textAlign: 'right' }}>
+                  {replayStep + 1} / 20 &nbsp; {Math.round(replaySnapshots[replayStep]?.progress_percent || 0)}%
+                </span>
+              </div>
+              <span className="text-mono" style={{ color: 'var(--text-muted)', borderLeft: '1px solid var(--border)', paddingLeft: '12px' }}>
+                {new Date(replaySnapshots[replayStep]?.timestamp || Date.now()).toLocaleTimeString([], {
+                  hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+                })}
+              </span>
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default BengaluruMap

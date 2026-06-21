@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: grid-ml-api
+    env: python
+    buildCommand: "cd ml && pip install -r requirements.txt"
+    startCommand: "cd ml && uvicorn api.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+
+  - type: web
+    name: grid-node-server
+    env: node
+    buildCommand: "cd server && npm install"
+    startCommand: "cd server && node index.js"
+    envVars:
+      - key: FASTAPI_BASE_URL
+        fromService:
+          type: web
+          name: grid-ml-api
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: CORS_ORIGINS
+        value: "https://grid-unlocked-1782050398.netlify.app"
