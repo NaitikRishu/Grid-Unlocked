@@ -32,93 +32,92 @@ module.exports = function replayHandler(ws) {
     JSON.stringify({
       type: "INFO",
       message: "Replay service is online.",
-    }),
+    })
   );
 
-  ws.on("message", (rawMessage) => {
-    let parsed = {};
-
-    try {
-      parsed = JSON.parse(String(rawMessage));
-    } catch {
-      ws.send(
-        JSON.stringify({
-          type: "ERROR",
-          message: "Replay payload must be valid JSON.",
-        }),
-      );
-      return;
-    }
-
-    const eventId = parsed.event_id;
-    if (!eventId) {
-      ws.send(
-        JSON.stringify({
-          type: "ERROR",
-          message: "Missing event_id in request.",
-        }),
-      );
-      return;
-    }
-
-    // Cancel any ongoing streaming interval for this socket
+  const cleanup = () => {
     if (activeInterval) {
       clearInterval(activeInterval);
       activeInterval = null;
     }
+  };
 
-    const data = getReplayData();
-    const snapshots = data[eventId];
-
-    if (!snapshots) {
-      ws.send(
-        JSON.stringify({
-          type: "ERROR",
-          event_id: eventId,
-          message: `No precomputed replay data found for event ${eventId}.`,
-        }),
-      );
-      return;
-    }
-
-    ws.send(
-      JSON.stringify({
-        type: "ACK",
-        event_id: eventId,
-        total_steps: snapshots.length,
-      }),
-    );
-
-    // Stream snapshots sequentially with a delay (e.g. 500ms per step)
-    let currentStep = 0;
-    activeInterval = setInterval(() => {
-      if (currentStep >= snapshots.length) {
+  ws.on("message", (message) => {
+    try {
+      const parsed = JSON.parse(message);
+      const eventId = parsed.event_id;
+      
+      if (!eventId) {
         ws.send(
           JSON.stringify({
-            type: "COMPLETE",
-            event_id: eventId,
-          }),
+            type: "ERROR",
+            message: "Missing event_id in request.",
+          })
         );
-        clearInterval(activeInterval);
-        activeInterval = null;
+        return;
+      }
+
+      cleanup(); // Cancel any ongoing streaming interval for this socket
+
+      const data = getReplayData();
+      const snapshots = data[eventId];
+
+      if (!snapshots) {
+        ws.send(
+          JSON.stringify({
+            type: "ERROR",
+            event_id: eventId,
+            message: `No precomputed replay data found for event ${eventId}.`,
+          })
+        );
         return;
       }
 
       ws.send(
         JSON.stringify({
-          type: "SNAPSHOT",
+          type: "ACK",
           event_id: eventId,
-          step: currentStep,
-          data: snapshots[currentStep],
-        }),
+          total_steps: snapshots.length,
+        })
       );
-      currentStep++;
-    }, 500); // 500ms interval
+
+      // Stream snapshots sequentially with a delay (e.g. 500ms per step)
+      let currentStep = 0;
+      activeInterval = setInterval(() => {
+        if (currentStep >= snapshots.length) {
+          ws.send(
+            JSON.stringify({
+              type: "COMPLETE",
+              event_id: eventId,
+            })
+          );
+          cleanup();
+          return;
+        }
+
+        const snapshot = snapshots[currentStep];
+        ws.send(
+          JSON.stringify({
+            type: "SNAPSHOT",
+            event_id: eventId,
+            timestamp: snapshot.timestamp,
+            zone_scores: snapshot.zone_scores,
+            progress_percent: Math.round((currentStep / (snapshots.length - 1)) * 100),
+          })
+        );
+        currentStep++;
+      }, 500); // 500ms interval
+    } catch (err) {
+      ws.send(
+        JSON.stringify({
+          type: "ERROR",
+          message: "Invalid JSON message or internal error",
+        })
+      );
+    }
   });
 
   ws.on("close", () => {
-    if (activeInterval) {
-      clearInterval(activeInterval);
-    }
+    cleanup();
   });
 };

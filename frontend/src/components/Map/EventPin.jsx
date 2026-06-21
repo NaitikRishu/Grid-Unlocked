@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import client from '../../api/client'
+import { useAppStore } from '../../store/appStore'
+import { useReplay } from '../../hooks/useReplay'
 
 // Premium Map Marker Icon SVG Template
 const createPremiumMarker = (shellFill, shellStroke, discFill, discStroke, iconSvg) => L.divIcon({
@@ -59,6 +61,99 @@ const dummyEvents = [
   }
 ]
 
+function EventMarker({ event, onEventClick }) {
+  const { isPlaying, play, stop, error } = useReplay(event.id)
+  const { replayProgress, replayActive } = useAppStore()
+
+  const isThisEventPlaying = isPlaying && replayActive
+
+  return (
+    <Marker 
+      position={[event.lat, event.lon]} 
+      icon={eventIcon}
+      eventHandlers={{
+        click: () => {
+          if (onEventClick) {
+            onEventClick(event.id)
+          }
+        }
+      }}
+    >
+      <Popup className="event-popup" onClose={stop}>
+        <div className="popup-content" style={{ fontFamily: 'inherit', color: '#1e293b', minWidth: '180px' }}>
+          <span className="popup-tag" style={{
+            background: '#ef4444',
+            color: '#fff',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            fontSize: '0.75rem',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            display: 'inline-block',
+            marginBottom: '6px'
+          }}>{event.event_type}</span>
+          <h4 style={{ margin: '0 0 4px', fontSize: '0.95rem' }}>Event ID: {event.id}</h4>
+          <p style={{ margin: '0 0 2px', fontSize: '0.85rem' }}><strong>Zone ID:</strong> {event.zone_id || 'N/A'}</p>
+          <p style={{ margin: '0 0 2px', fontSize: '0.85rem' }}><strong>Start:</strong> {new Date(event.start_datetime).toLocaleString()}</p>
+          <p style={{ margin: '0 0 10px', fontSize: '0.85rem' }}><strong>Duration:</strong> {event.duration_minutes ? `${event.duration_minutes} mins` : 'Unknown'}</p>
+
+          <div style={{ borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '10px', marginTop: '5px' }}>
+            {isThisEventPlaying ? (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px', color: '#475569' }}>
+                  <span>Replay active</span>
+                  <span>{replayProgress}%</span>
+                </div>
+                <div style={{ width: '100%', height: '6px', background: '#cbd5e1', borderRadius: '999px', overflow: 'hidden', marginBottom: '8px' }}>
+                  <div style={{ width: `${replayProgress}%`, height: '100%', background: '#3b82f6', transition: 'width 0.2s' }}></div>
+                </div>
+                <button 
+                  onClick={stop}
+                  style={{
+                    width: '100%',
+                    padding: '6px',
+                    background: '#ef4444',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ⏹ Stop Playback
+                </button>
+              </div>
+            ) : (
+              <div>
+                <button 
+                  onClick={play}
+                  style={{
+                    width: '100%',
+                    padding: '6px',
+                    background: '#3b82f6',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ▶ Play Replay
+                </button>
+                {error && (
+                  <p style={{ color: '#ef4444', fontSize: '0.7rem', margin: '4px 0 0' }}>{error}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </Popup>
+    </Marker>
+  )
+}
+
 function EventPin({ onEventClick }) {
   const [events, setEvents] = useState([])
 
@@ -79,71 +174,9 @@ function EventPin({ onEventClick }) {
 
   return (
     <>
-      {events.map((event) => {
-        const isHigh = event.priority?.toLowerCase() === 'high' || event.priority === undefined;
-        const icon = isHigh ? highSeverityIcon : lowSeverityIcon;
-        const eventName = (event.event_type || 'Unknown').replace(/_/g, ' ');
-
-        return (
-          <Marker 
-            key={event.id} 
-            position={[event.lat, event.lon]} 
-            icon={icon}
-            eventHandlers={{
-              click: () => {
-                if (onEventClick) {
-                  onEventClick(event.id)
-                }
-              }
-            }}
-          >
-            <Popup 
-              className="custom-tooltip-popup"
-              closeButton={false}
-              autoPanPadding={[50, 50]}
-            >
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                transform: 'translateY(-20px)'
-              }}>
-                {/* Floating Chip */}
-                <div style={{
-                  background: '#1C1C21',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
-                  zIndex: 2,
-                  minWidth: '180px'
-                }}>
-                  <div style={{ fontSize: '11px', fontWeight: 500, color: '#EEEEF0', marginBottom: '4px' }}>
-                    {eventName} (ID: {event.zone_id || 'N/A'})
-                  </div>
-                  <div style={{ fontSize: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#8A8A90' }}>Status</span>
-                    <span style={{ color: isHigh ? '#F87171' : '#6B7280', fontWeight: 600 }}>
-                      {isHigh ? 'HIGH PRIORITY' : 'RESOLVED'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Dashed Leader Line & Anchor */}
-                <div style={{ position: 'relative', height: '30px', width: '2px', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1, marginTop: '-1px' }}>
-                  <svg width="4" height="34" viewBox="0 0 4 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="2" y1="0" x2="2" y2="28" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="3 3"/>
-                    <circle cx="2" cy="30" r="2" fill="#1C1C21" stroke="rgba(255,255,255,0.4)" strokeWidth="1"/>
-                  </svg>
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        )
-      })}
+      {events.map((event) => (
+        <EventMarker key={event.id} event={event} onEventClick={onEventClick} />
+      ))}
     </>
   )
 }

@@ -11,17 +11,15 @@ export const useAppStore = create((set) => ({
   highImpact: false,
   resourceAllocation: null,    // { zone_id: { police, barricades } }
   baselineScores: {},          // { zone_id: score }
-  simSignalOptimized: false,
-  simVmsActive: false,
-  simClearwayEnforced: false,
-  simHeavyVehicleRestricted: false,
-  isPlanning: false,
-  planningLat: 12.9784,
-  planningLon: 77.5994,
+  replayActive: false,
+  replayScores: null,          // { zone_id: score }
+  replayProgress: 0,           // 0-100 progress percent
 
   setBaselineScores: (scores) => set({ baselineScores: scores }),
-  setIsPlanning: (val) => set({ isPlanning: val }),
-  setPlanningCoords: (lat, lon) => set({ planningLat: lat, planningLon: lon }),
+  setReplayScores: (scores) => set({ replayScores: scores }),
+  setReplayProgress: (progress) => set({ replayProgress: progress }),
+  startReplay: () => set({ replayActive: true }),
+  stopReplay: () => set({ replayActive: false, replayScores: null, replayProgress: 0 }),
 
   setSimulationResults: (data, params = {}) => set({
     simulationScores: data.zone_scores || {},
