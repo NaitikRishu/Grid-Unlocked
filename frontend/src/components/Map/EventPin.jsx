@@ -67,6 +67,11 @@ function EventMarker({ event, onEventClick }) {
 
   const isThisEventPlaying = isPlaying && replayActive
 
+  const eventIcon =
+    event.priority === 'high'
+      ? highSeverityIcon
+      : lowSeverityIcon
+
   return (
     <Marker 
       position={[event.lat, event.lon]} 
