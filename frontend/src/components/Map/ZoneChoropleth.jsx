@@ -72,10 +72,10 @@ function ZoneChoropleth({ customScores: propCustomScores = null }) {
   const getStyle = (feature) => {
     const score = getDisplayScore(feature)
     return {
-      color: '#1a3630', // Dark green/teal border
-      weight: 1.2,
+      color: 'rgba(255, 255, 255, 0.15)', // Minimalist semi-transparent boundary border
+      weight: 1.0,
       fillColor: getZoneColor(score),
-      fillOpacity: 0.4
+      fillOpacity: 0.22 // Lower opacity for a sleek, matte black visualization
     }
   }
 
@@ -112,9 +112,9 @@ function ZoneChoropleth({ customScores: propCustomScores = null }) {
           mouseover: (e) => {
             const l = e.target
             l.setStyle({
-              fillOpacity: 0.65,
-              weight: 2,
-              color: '#38d39f'
+              fillOpacity: 0.45,
+              weight: 1.5,
+              color: '#ffffff' // Crisp white border highlight on hover
             })
           },
           mouseout: (e) => {
