@@ -2,6 +2,30 @@ import { useEffect, useState } from 'react'
 import client from '../../api/client'
 import { useAppStore } from '../../store/appStore'
 
+function AnimatedNumber({ value }) {
+  const [current, setCurrent] = useState(0)
+
+  useEffect(() => {
+    let start = 0
+    const end = parseInt(value)
+    if (isNaN(end) || end === 0) return
+    const duration = 1200
+    const increment = end / (duration / 16)
+    const timer = setInterval(() => {
+      start += increment
+      if (start >= end) {
+        setCurrent(end)
+        clearInterval(timer)
+      } else {
+        setCurrent(Math.floor(start))
+      }
+    }, 16)
+    return () => clearInterval(timer)
+  }, [value])
+
+  return <>{current}</>
+}
+
 function Sidebar({ selectedEventId, onSelectEvent }) {
   const { isPlanning, planningLat, planningLon, setIsPlanning, setPlanningCoords } = useAppStore()
   const [events, setEvents] = useState([])
@@ -153,12 +177,12 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
           <h2 className="text-section-heading" style={{ marginBottom: '16px' }}>Operations Metrics</h2>
           <div style={{ display: 'flex' }}>
             <div style={{ flex: 1 }}>
-              <p className="text-metric-large">243</p>
+              <p className="text-metric-large"><AnimatedNumber value="243" /></p>
               <p className="text-eyebrow" style={{ marginTop: '4px' }}>ACTIVE WARDS</p>
             </div>
             <div style={{ width: '1px', background: 'var(--border)', margin: '0 16px' }} />
             <div style={{ flex: 1 }}>
-              <p className="text-metric-large">10</p>
+              <p className="text-metric-large"><AnimatedNumber value="10" /></p>
               <p className="text-eyebrow" style={{ marginTop: '4px' }}>LIVE FEEDS</p>
             </div>
           </div>
@@ -171,15 +195,7 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
               <p className="text-eyebrow" style={{ margin: 0 }}>INCIDENT LOG</p>
               <button 
                 onClick={toggleAddForm}
-                style={{ 
-                  color: 'var(--accent)', 
-                  background: 'none', 
-                  border: 'none', 
-                  fontSize: '11px', 
-                  fontWeight: 500, 
-                  cursor: 'pointer',
-                  padding: 0
-                }}
+                className="plan-event-btn"
               >
                 {showAddForm ? 'Cancel' : '+ Plan Event'}
               </button>
@@ -268,33 +284,38 @@ function Sidebar({ selectedEventId, onSelectEvent }) {
             ) : (
               events.map((event) => {
                 const isActive = selectedEventId === event.id;
-                const isHigh = event.priority?.toLowerCase() === 'high';
+                const isCongested = event.priority?.toLowerCase() === 'high' || event.priority?.toLowerCase() === 'medium';
+                const statusColor = isCongested ? '#ff3b30' : '#34c759';
+                const statusBg = isCongested ? 'rgba(255, 59, 48, 0.15)' : 'rgba(52, 199, 89, 0.15)';
+
                 return (
                   <div 
                     key={event.id} 
                     onClick={() => onSelectEvent(event.id)}
+                    className="incident-card"
                     style={{
-                      background: isActive ? (isHigh ? 'var(--danger-dim)' : 'var(--accent-dim)') : 'var(--bg-raised)',
-                      borderLeft: isHigh ? '2px solid var(--danger)' : '2px solid var(--warning)',
-                      borderRight: '1px solid transparent',
-                      borderTop: '1px solid transparent',
-                      borderBottom: '1px solid transparent',
-                      borderRadius: '8px',
-                      padding: '10px 12px',
-                      cursor: 'pointer',
-                      transition: 'all 0.12s ease',
+                      background: isActive ? statusBg : 'var(--bg-surface)',
+                      borderLeft: `3px solid ${statusColor}`,
                       opacity: isActive ? 1 : 0.85,
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <span className="badge-text" style={{
-                        background: isHigh ? 'var(--danger-dim)' : 'rgba(255, 159, 10, 0.15)',
-                        color: isHigh ? 'var(--danger)' : 'var(--warning)',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                      }}>
-                        {event.priority || 'LOW'}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        {event.status?.toLowerCase() === 'active' && (
+                          <div className="pulsing-dot-container">
+                            <div className="pulsing-dot-core" style={{ backgroundColor: statusColor, boxShadow: `0 0 6px ${statusColor}` }}></div>
+                            <div className="pulsing-dot-ring" style={{ borderColor: statusColor }}></div>
+                          </div>
+                        )}
+                        <span className="badge-text" style={{
+                          background: statusBg,
+                          color: statusColor,
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                        }}>
+                          {event.priority || 'LOW'}
+                        </span>
+                      </div>
                       <span className="text-mono" style={{ color: 'var(--text-muted)' }}>
                         {new Date(event.start_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                       </span>

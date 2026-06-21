@@ -1,5 +1,5 @@
 const express = require("express");
-const { createProxyMiddleware } = require("http-proxy-middleware");
+const { createProxyMiddleware, fixRequestBody } = require("http-proxy-middleware");
 const { fastApiBaseUrl } = require("../config");
 
 const router = express.Router();
@@ -11,6 +11,7 @@ router.use(
     changeOrigin: true,
     pathRewrite: { "^/api": "" },
     proxyTimeout: 15000,
+    onProxyReq: fixRequestBody,
     onError(err, req, res) {
       res.status(502).json({
         error: "fastapi_unreachable",

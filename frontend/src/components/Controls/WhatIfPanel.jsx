@@ -188,12 +188,34 @@ EXPECTED IMPACT OUTCOME:
 
   if (!selectedEvent) {
     return (
-      <div style={{ padding: '24px 20px' }}>
+      <div style={{ padding: '24px 20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
         <p className="text-eyebrow">Scenario Planner</p>
-        <h2 className="text-section-heading">What-If Simulator</h2>
-        <p className="text-body" style={{ marginTop: '12px' }}>
-          Select an incident report from the Incident Log to run a mitigation simulation.
-        </p>
+        <h2 className="text-section-heading" style={{ marginBottom: '24px' }}>What-If Simulator</h2>
+        
+        <div style={{
+          flex: 1,
+          border: '2px dashed rgba(0, 207, 255, 0.25)',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          background: 'rgba(8, 15, 40, 0.4)',
+          boxShadow: '0 0 20px rgba(0, 207, 255, 0.05)',
+          textAlign: 'center'
+        }}>
+          <div className="radar-scanner-wrapper" style={{ marginBottom: '20px' }}>
+            <div className="radar-sweep"></div>
+            <div className="radar-center-dot"></div>
+          </div>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
+            No Incident Selected
+          </p>
+          <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+            Select an incident from the log to run a mitigation simulation.
+          </p>
+        </div>
       </div>
     )
   }
@@ -235,7 +257,29 @@ EXPECTED IMPACT OUTCOME:
   )
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
+      {isSimulating && (
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(5, 11, 24, 0.75)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px'
+        }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)', marginBottom: '12px', letterSpacing: '0.05em' }}>
+            RUNNING MITIGATION SIMULATION...
+          </p>
+          <div style={{ width: '80%', height: '4px', background: 'rgba(0, 212, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+            <div className="sim-progress-bar" style={{ height: '100%', background: 'var(--accent)', width: '0%', borderRadius: '2px' }}></div>
+          </div>
+        </div>
+      )}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <p className="text-eyebrow" style={{ margin: 0 }}>MITIGATION SCENARIO</p>

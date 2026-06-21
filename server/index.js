@@ -7,8 +7,9 @@ const replayHandler = require("./ws/replay");
 const { port, fastApiBaseUrl } = require("./config");
 
 const app = express();
-app.use(express.json());
 app.use(corsMiddleware);
+app.use("/api", proxyRouter);
+app.use(express.json());
 
 app.get("/health", (_req, res) => {
   res.json({
@@ -17,8 +18,6 @@ app.get("/health", (_req, res) => {
     fastApiBaseUrl,
   });
 });
-
-app.use("/api", proxyRouter);
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: "/replay" });

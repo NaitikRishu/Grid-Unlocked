@@ -157,7 +157,7 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
     return () => clearInterval(interval)
   }, [isPlaying, replaySnapshots])
 
-  const tileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
   const attribution = '&copy; OpenStreetMap contributors &copy; CARTO'
 
   const handleTileError = () => {
@@ -170,13 +170,13 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
       <div style={{
         width: '28px', height: '16px', borderRadius: '8px',
         background: checked ? 'var(--accent)' : 'rgba(120,120,128,0.2)',
-        transition: 'background 0.15s ease', position: 'relative'
+        transition: 'background 0.15s ease', position: 'relative',
+        boxShadow: checked ? '0 0 8px rgba(0, 212, 255, 0.6)' : 'none'
       }}>
         <div style={{
           position: 'absolute', top: '2px', left: '2px', width: '12px', height: '12px',
           borderRadius: '50%', background: '#ffffff',
           transition: 'transform 0.15s ease', transform: checked ? 'translateX(12px)' : 'translateX(0px)',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
         }} />
       </div>
     </label>
@@ -206,40 +206,43 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
       </div>
 
       {/* Map Content */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#ffffff' }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#050B18' }}>
+        <div className="map-pulse-overlay"></div>
         
-        {/* Layer Panel (Floating Light) */}
+        {/* Layer Panel (Floating Dark) */}
         <div style={{
           position: 'absolute', top: '12px', right: '12px', zIndex: 1000,
-          background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '12px 14px',
-          display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '150px'
+          background: 'rgba(13, 27, 42, 0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(0, 212, 255, 0.25)', borderRadius: '10px', padding: '12px 14px',
+          display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '150px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)'
         }}>
-          <p className="text-eyebrow" style={{ color: '#8e8e93' }}>LAYERS</p>
+          <p className="text-eyebrow" style={{ color: 'var(--text-secondary)' }}>LAYERS</p>
           {[
             { label: 'Choropleth', state: showZones, set: setShowZones },
             { label: 'Events', state: showEvents, set: setShowEvents },
             { label: 'Heatmap', state: showViolations, set: setShowViolations },
           ].map(({ label, state, set }) => (
             <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '12px', color: '#1c1c1e', fontWeight: 500 }}>{label}</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500 }}>{label}</span>
               <ToggleSwitchLight checked={state} onChange={() => set(!state)} />
             </div>
           ))}
         </div>
 
-        {/* Simulation Banner (Floating Light) */}
+        {/* Simulation Banner (Floating Dark) */}
         {simulationActive && (
           <div style={{
             position: 'absolute', top: '12px', left: '12px', zIndex: 1000,
-            background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '12px 16px'
+            background: 'rgba(13, 27, 42, 0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(0, 212, 255, 0.25)', borderRadius: '10px', padding: '12px 16px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)'
           }}>
-            <p className="text-eyebrow" style={{ color: '#8e8e93' }}>SIMULATION</p>
-            <p style={{ fontSize: '20px', fontWeight: 600, color: '#1c1c1e', margin: '2px 0 0', letterSpacing: '-0.02em' }}>
+            <p className="text-eyebrow" style={{ color: 'var(--text-secondary)' }}>SIMULATION</p>
+            <p style={{ fontSize: '20px', fontWeight: 600, color: 'var(--accent)', margin: '2px 0 0', letterSpacing: '-0.02em', textShadow: '0 0 8px rgba(0, 212, 255, 0.4)' }}>
               +{Math.round(simulationDelaySaved)} min
             </p>
-            <p style={{ fontSize: '11px', color: '#8e8e93', margin: '2px 0 0' }}>saved via optimised routing</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>saved via optimised routing</p>
           </div>
         )}
 

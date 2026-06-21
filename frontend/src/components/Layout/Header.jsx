@@ -2,26 +2,46 @@ import React from 'react'
 
 function Header({ activeTab, onTabChange }) {
   return (
-    <header style={styles.header}>
+    <header className="stagger-navbar" style={styles.header}>
       <div style={styles.leftSection}>
-        <p className="text-eyebrow" style={styles.eyebrow}>GRID UNLOCKED</p>
-        <h1 className="text-page-title" style={styles.title}>Traffic Intelligence Control Room</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div className="radar-pulse"></div>
+          <h1 style={styles.brandTitle}>
+            Grid<span style={styles.brandAccent}>Flow</span>
+          </h1>
+          <span style={styles.subtext}>Traffic Intelligence Control Room</span>
+        </div>
       </div>
 
       <div style={styles.rightSection}>
-        <div style={styles.tabContainer}>
+        <div className="nav-tabs-wrapper">
           <button
             onClick={() => onTabChange('operations')}
-            style={activeTab === 'operations' ? { ...styles.tabBtn, ...styles.activeTab } : styles.tabBtn}
+            className={`nav-tab-button ${activeTab === 'operations' ? 'active' : ''}`}
           >
             Live Operations Map
           </button>
           <button
             onClick={() => onTabChange('analytics')}
-            style={activeTab === 'analytics' ? { ...styles.tabBtn, ...styles.activeTab } : styles.tabBtn}
+            className={`nav-tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
           >
             Analytics Dashboard
           </button>
+          <div
+            className="nav-tab-indicator"
+            style={{
+              left: activeTab === 'operations' ? '4px' : '176px',
+              width: activeTab === 'operations' ? '152px' : '172px',
+            }}
+          />
+        </div>
+
+        <div className="status-ripple" style={{ marginLeft: '24px' }}>
+          <div className="status-dot-wrapper">
+            <div className="status-dot"></div>
+            <div className="status-dot-ripple"></div>
+          </div>
+          <span>System status: Operational</span>
         </div>
       </div>
     </header>
@@ -30,51 +50,58 @@ function Header({ activeTab, onTabChange }) {
 
 const styles = {
   header: {
-    height: '56px',
-    background: 'var(--bg-base)',
-    borderBottom: '1px solid var(--border)',
+    height: '68px',
+    background: 'rgba(10, 10, 14, 0.75)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    borderBottom: '1px solid rgba(255, 0, 127, 0.15)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '0 24px',
     flexShrink: 0,
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
   },
   leftSection: {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
   },
-  eyebrow: {
-    color: 'var(--accent)',
-    marginBottom: '2px',
-  },
-  title: {
-    fontSize: '16px', // Slightly smaller than default page title to fit header nicely
+  brandTitle: {
+    fontSize: '28px',
+    fontWeight: '800',
+    letterSpacing: '-0.02em',
+    color: 'var(--text-primary)',
     margin: 0,
+    display: 'flex',
+    alignItems: 'center',
+    background: 'linear-gradient(to right, #ffffff, #f0e8f5)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    textShadow: '0 0 12px var(--accent)',
+  },
+  brandAccent: {
+    color: 'var(--accent)',
+    background: 'linear-gradient(to right, #ffffff, #9ca3af)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    fontWeight: '900',
+    marginLeft: '2px',
+  },
+  subtext: {
+    fontSize: '11px',
+    color: 'var(--text-secondary)',
+    fontWeight: 500,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    opacity: 0.8,
+    marginLeft: '12px',
   },
   rightSection: {
     display: 'flex',
     alignItems: 'center',
-  },
-  tabContainer: {
-    display: 'flex',
-    gap: '8px',
-  },
-  tabBtn: {
-    background: 'transparent',
-    border: '1px solid transparent',
-    color: 'var(--text-secondary)',
-    fontSize: '12px',
-    fontWeight: 500,
-    padding: '6px 12px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  activeTab: {
-    background: 'var(--accent-dim)',
-    color: 'var(--accent)',
-    border: '1px solid rgba(59,158,255,0.25)',
   },
 }
 

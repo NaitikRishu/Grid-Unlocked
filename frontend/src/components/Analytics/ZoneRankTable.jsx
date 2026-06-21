@@ -53,73 +53,87 @@ function ZoneRankTable() {
   }, [baselineScores, simulationScores, resourceAllocation, simulationActive, zoneSummaries])
 
   return (
-    <div className="panel panel--glow" style={{ padding: '24px', flex: '1', minHeight: '340px' }}>
-      <p className="panel__label">Resource Allocations</p>
-      <h2>Zone Congestion Ranking</h2>
-      <p className="panel__text" style={{ marginBottom: '16px', fontSize: '0.86rem' }}>
+    <div className="panel panel--glow" style={{ padding: '24px', flex: '1', minHeight: '340px', background: 'rgba(8, 15, 40, 0.7)', backdropFilter: 'blur(16px)', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)' }}>
+      <p className="panel__label" style={{ color: 'var(--accent)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px 0', fontWeight: 'bold' }}>Resource Allocations</p>
+      <h2 style={{ margin: '0 0 6px 0', color: '#ffffff', fontSize: '16px', fontWeight: '700' }}>Zone Congestion Ranking</h2>
+      <p className="panel__text" style={{ marginBottom: '16px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
         {simulationActive 
           ? 'Showing active simulation scores and allocated intervention resources.' 
           : 'Showing baseline zone average congestion. Select an event and run simulation to see resource deployments.'}
       </p>
 
-      <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '8px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem', color: '#f4f4f5', textAlign: 'left' }}>
+      <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid rgba(0, 207, 255, 0.12)', borderRadius: '8px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem', color: 'var(--text-primary)', textAlign: 'left' }}>
           <thead>
-            <tr style={{ background: 'rgba(255, 255, 255, 0.04)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <th style={{ padding: '10px 12px', fontWeight: '600' }}>Zone ID</th>
-              <th style={{ padding: '10px 12px', fontWeight: '600' }}>Congestion Score</th>
-              <th style={{ padding: '10px 12px', fontWeight: '600' }}>Police Officers</th>
-              <th style={{ padding: '10px 12px', fontWeight: '600' }}>Barricades</th>
-              <th style={{ padding: '10px 12px', fontWeight: '600' }}>Top Event Type</th>
+            <tr className="table-header-sweep" style={{ background: 'rgba(8, 15, 40, 0.95)', borderBottom: '1px solid rgba(0, 207, 255, 0.2)', position: 'sticky', top: 0, zIndex: 1 }}>
+              <th style={{ padding: '12px', fontWeight: '600' }}>Zone ID</th>
+              <th style={{ padding: '12px', fontWeight: '600' }}>Congestion Score</th>
+              <th style={{ padding: '12px', fontWeight: '600' }}>Police Officers</th>
+              <th style={{ padding: '12px', fontWeight: '600' }}>Barricades</th>
+              <th style={{ padding: '12px', fontWeight: '600' }}>Top Event Type</th>
             </tr>
           </thead>
           <tbody>
             {loading && tableData.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa' }}>
+                <td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                   Loading zone details...
                 </td>
               </tr>
             ) : tableData.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa' }}>
+                <td colSpan={5} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                   No zone scores available.
                 </td>
               </tr>
             ) : (
-              tableData.slice(0, 30).map((row, idx) => (
-                <tr 
-                  key={row.zoneId} 
-                  style={{ 
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
-                    background: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.01)'
-                  }}
-                >
-                  <td style={{ padding: '10px 12px', fontWeight: '700' }}>Zone {row.zoneId}</td>
-                  <td style={{ padding: '10px 12px' }}>
-                    <span style={{ 
-                      display: 'inline-block',
-                      padding: '2px 8px',
-                      borderRadius: '999px',
-                      fontSize: '0.78rem',
-                      fontWeight: '700',
-                      background: row.score > 50 ? 'rgba(239, 68, 68, 0.15)' : row.score > 20 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.15)',
-                      color: row.score > 50 ? '#ef4444' : row.score > 20 ? '#fbbf24' : '#10b981'
-                    }}>
-                      {row.score.toFixed(2)}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px 12px', fontWeight: row.police > 0 ? '700' : 'normal', color: row.police > 0 ? '#60a5fa' : '#a1a1aa' }}>
-                    {row.police}
-                  </td>
-                  <td style={{ padding: '10px 12px', fontWeight: row.barricades > 0 ? '700' : 'normal', color: row.barricades > 0 ? '#fb923c' : '#a1a1aa' }}>
-                    {row.barricades}
-                  </td>
-                  <td style={{ padding: '10px 12px', textTransform: 'capitalize', color: '#d4d4d8' }}>
-                    {row.topEvent}
-                  </td>
-                </tr>
-              ))
+              tableData.slice(0, 30).map((row, idx) => {
+                const score = row.score
+                let badgeColor = 'var(--success)'
+                let badgeBg = 'var(--success-dim)'
+                if (score > 2.6) {
+                  badgeColor = 'var(--danger)'
+                  badgeBg = 'var(--danger-dim)'
+                } else if (score >= 2.2) {
+                  badgeColor = 'var(--warning)'
+                  badgeBg = 'rgba(255, 169, 77, 0.15)'
+                }
+
+                return (
+                  <tr 
+                    key={row.zoneId} 
+                    className="rank-table-row"
+                    style={{ 
+                      borderBottom: '1px solid rgba(0, 207, 255, 0.08)',
+                      background: idx % 2 === 0 ? 'rgba(0, 207, 255, 0.03)' : 'transparent'
+                    }}
+                  >
+                    <td style={{ padding: '10px 12px', fontWeight: '700' }}>Zone {row.zoneId}</td>
+                    <td style={{ padding: '10px 12px' }}>
+                      <span style={{ 
+                        display: 'inline-block',
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        fontSize: '0.78rem',
+                        fontWeight: '700',
+                        background: badgeBg,
+                        color: badgeColor
+                      }}>
+                        {row.score.toFixed(2)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 12px', fontWeight: row.police > 0 ? '700' : 'normal', color: row.police > 0 ? '#00cfff' : 'var(--text-secondary)' }}>
+                      {row.police}
+                    </td>
+                    <td style={{ padding: '10px 12px', fontWeight: row.barricades > 0 ? '700' : 'normal', color: row.barricades > 0 ? '#ffa94d' : 'var(--text-secondary)' }}>
+                      {row.barricades}
+                    </td>
+                    <td style={{ padding: '10px 12px', textTransform: 'capitalize', color: 'var(--text-secondary)' }}>
+                      {row.topEvent}
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>

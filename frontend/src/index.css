@@ -1,22 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-base: #09090B;
-  --bg-surface: #111113;
-  --bg-raised: #1A1A1E;
-  --bg-inset: #222226;
-  --border: rgba(255,255,255,0.07);
-  --border-strong: rgba(255,255,255,0.13);
-  --text-primary: #F2F2F7;
-  --text-secondary: #8E8E93;
-  --text-muted: #48484A;
-  --accent: #3B9EFF;
-  --accent-dim: rgba(59,158,255,0.12);
-  --danger: #FF453A;
-  --danger-dim: rgba(255,69,58,0.10);
-  --warning: #FF9F0A;
-  --success: #30D158;
-  --success-dim: rgba(48,209,88,0.10);
+  --bg-base: #030303;
+  --bg-surface: rgba(15, 15, 15, 0.8);
+  --bg-raised: rgba(22, 22, 22, 0.9);
+  --bg-inset: rgba(5, 5, 5, 0.5);
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.25);
+  --text-primary: #ffffff;
+  --text-secondary: #8a8a8a;
+  --text-muted: #555555;
+  --accent: #ffffff;
+  --accent-secondary: #d1d5db;
+  --accent-dim: rgba(255, 255, 255, 0.1);
+  --danger: #ffffff;
+  --danger-dim: rgba(255, 255, 255, 0.15);
+  --warning: #a3a3a3;
+  --success: #525252;
+  --success-dim: rgba(255, 255, 255, 0.05);
 
   font-family: 'Inter', -apple-system, sans-serif;
   line-height: 1.5;
@@ -43,6 +44,8 @@ body,
 body {
   margin: 0;
   min-height: 100vh;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
 }
 
 button,

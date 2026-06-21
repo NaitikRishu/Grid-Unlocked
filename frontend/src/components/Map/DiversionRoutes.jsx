@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { GeoJSON, Marker } from 'react-leaflet'
 import L from 'leaflet'
 import { useAppStore } from '../../store/appStore'
@@ -88,15 +88,15 @@ function DiversionRoutes({ routes }) {
 
   const getRouteStyle = (feature) => {
     if (feature.properties?.is_blocked) {
-      return { color: 'var(--danger)', weight: 6, opacity: 0.9 }
+      return { color: '#ff3b30', weight: 6, opacity: 0.95 } // Red for congested / blocked
     }
     const altIndex = altFeatures.indexOf(feature)
-    const colors = ['var(--success)', 'var(--accent)', 'var(--text-secondary)']
+    const colors = ['#00f0ff', '#ff9f0a', '#ff00ff'] // Cyan for fastest, Orange for secondary, Magenta for tertiary/others
     return {
-      color: colors[altIndex] || 'var(--text-secondary)',
-      weight: altIndex === 0 ? 5 : 3,
-      opacity: 0.85,
-      dashArray: altIndex > 0 ? '4, 6' : undefined
+      color: colors[altIndex] || '#ff00ff',
+      weight: altIndex === 0 ? 6.5 : (altIndex === 1 ? 4.5 : 3.5),
+      opacity: 0.95,
+      dashArray: altIndex > 0 ? '6, 8' : undefined
     }
   }
 
@@ -145,7 +145,8 @@ function DiversionRoutes({ routes }) {
     <>
       <div style={{
         position: 'absolute', top: '160px', left: '12px', zIndex: 1000,
-        background: 'var(--bg-raised)', border: '1px solid var(--border-strong)',
+        background: 'rgba(15, 15, 15, 0.8)', backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255, 255, 255, 0.12)',
         borderRadius: '10px', padding: '12px', minWidth: '200px'
       }}>
         <p className="text-eyebrow" style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>DIVERSION OPTIONS</p>
@@ -183,10 +184,20 @@ function DiversionRoutes({ routes }) {
 
       {routes.features.map((feature, idx) => {
         if (feature.properties?.is_blocked) {
-          return <GeoJSON key={idx + '-congested'} data={feature} style={getRouteStyle(feature)} />
+          return (
+            <React.Fragment key={idx + '-congested-grp'}>
+              <GeoJSON data={feature} style={{ color: '#030303', weight: 11, opacity: 0.95 }} />
+              <GeoJSON data={feature} style={getRouteStyle(feature)} />
+            </React.Fragment>
+          )
         }
         if (!activeRoutes[idx]) return null
-        return <GeoJSON key={idx + '-' + (feature.properties?.route_label || '')} data={feature} style={getRouteStyle(feature)} />
+        return (
+          <React.Fragment key={idx + '-alt-grp'}>
+            <GeoJSON data={feature} style={{ color: '#030303', weight: 9, opacity: 0.95 }} />
+            <GeoJSON data={feature} style={getRouteStyle(feature)} />
+          </React.Fragment>
+        )
       })}
 
       {renderBarricadeMarker()}

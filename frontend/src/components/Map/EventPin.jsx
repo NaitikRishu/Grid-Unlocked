@@ -5,38 +5,54 @@ import client from '../../api/client'
 import { useAppStore } from '../../store/appStore'
 import { useReplay } from '../../hooks/useReplay'
 
-// Premium Map Marker Icon SVG Template
-const createPremiumMarker = (shellFill, shellStroke, discFill, discStroke, iconSvg) => L.divIcon({
+// Glowing SVG Circle Markers
+const createGlowingMarker = (color, isActive) => L.divIcon({
   html: `
-    <div style="width: 36px; height: 46px; position: relative;">
-      <svg width="36" height="46" viewBox="0 0 36 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="18" cy="44" rx="5" ry="2.5" fill="rgba(0,0,0,0.18)"/>
-        <path d="M18 2C9.163 2 2 9.163 2 18C2 28 18 42 18 42C18 42 34 28 34 18C34 9.163 26.837 2 18 2Z" 
-              fill="${shellFill}" stroke="${shellStroke}" stroke-width="0.8"/>
-        <circle cx="18" cy="16" r="10" fill="${discFill}" stroke="${discStroke}" stroke-width="0.6"/>
-        <g transform="translate(12, 10)">
-          ${iconSvg}
-        </g>
-      </svg>
+    <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+      ${isActive ? `
+        <div style="
+          position: absolute;
+          width: 24px;
+          height: 24px;
+          border: 2.5px solid ${color};
+          border-radius: 50%;
+          animation: markerPulse 1.8s infinite ease-out;
+          pointer-events: none;
+        "></div>
+      ` : ''}
+      <div style="
+        width: 10px;
+        height: 10px;
+        background-color: ${color};
+        border-radius: 50%;
+        box-shadow: 0 0 10px ${color};
+        z-index: 2;
+      "></div>
     </div>
   `,
-  className: 'premium-marker',
-  iconSize: [36, 46],
-  iconAnchor: [18, 44]
+  className: 'glowing-map-marker',
+  iconSize: [24, 24],
+  iconAnchor: [12, 12]
 })
 
-// 4. High severity incident (Amber)
-const highSeverityIcon = createPremiumMarker(
-  '#2A1800', 'rgba(251,191,36,0.3)', '#3D2400', 'rgba(251,191,36,0.2)',
-  `<rect x="5" y="2" width="2" height="7" rx="1" fill="#FBBF24"/>
-   <rect x="5" y="10" width="2" height="2" rx="1" fill="#FBBF24"/>`
-)
+const highSeverityIconActive = createGlowingMarker('#ff3b30', true)
+const highSeverityIconInactive = createGlowingMarker('#ff3b30', false)
 
-// 5. Low / resolved incident (Gray)
-const lowSeverityIcon = createPremiumMarker(
-  '#131316', 'rgba(255,255,255,0.1)', '#1C1C21', 'rgba(255,255,255,0.07)',
-  `<circle cx="6" cy="6" r="2" fill="#6B7280"/>`
-)
+const mediumSeverityIconActive = createGlowingMarker('#ff3b30', true)
+const mediumSeverityIconInactive = createGlowingMarker('#ff3b30', false)
+
+const lowSeverityIconActive = createGlowingMarker('#34c759', true)
+const lowSeverityIconInactive = createGlowingMarker('#34c759', false)
+
+const getEventIcon = (event) => {
+  const isHigh = event.priority?.toLowerCase() === 'high'
+  const isMedium = event.priority?.toLowerCase() === 'medium'
+  const isActive = event.status?.toLowerCase() === 'active'
+
+  if (isHigh) return isActive ? highSeverityIconActive : highSeverityIconInactive
+  if (isMedium) return isActive ? mediumSeverityIconActive : mediumSeverityIconInactive
+  return isActive ? lowSeverityIconActive : lowSeverityIconInactive
+}
 
 const dummyEvents = [
   {
@@ -47,7 +63,8 @@ const dummyEvents = [
     lon: 77.5906,
     start_datetime: '2026-06-19T08:30:00Z',
     duration_minutes: 120,
-    priority: 'high'
+    priority: 'high',
+    status: 'active'
   },
   {
     id: 'evt-2',
@@ -57,7 +74,8 @@ const dummyEvents = [
     lon: 77.5746,
     start_datetime: '2026-06-19T09:00:00Z',
     duration_minutes: 240,
-    priority: 'low'
+    priority: 'low',
+    status: 'resolved'
   }
 ]
 
@@ -66,11 +84,7 @@ function EventMarker({ event, onEventClick }) {
   const { replayProgress, replayActive } = useAppStore()
 
   const isThisEventPlaying = isPlaying && replayActive
-
-  const eventIcon =
-    event.priority === 'high'
-      ? highSeverityIcon
-      : lowSeverityIcon
+  const eventIcon = getEventIcon(event)
 
   return (
     <Marker 
@@ -85,39 +99,59 @@ function EventMarker({ event, onEventClick }) {
       }}
     >
       <Popup className="event-popup" onClose={stop}>
-        <div className="popup-content" style={{ fontFamily: 'inherit', color: '#1e293b', minWidth: '180px' }}>
-          <span className="popup-tag" style={{
-            background: '#ef4444',
-            color: '#fff',
-            padding: '2px 6px',
-            borderRadius: '4px',
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
-            display: 'inline-block',
-            marginBottom: '6px'
-          }}>{event.event_type}</span>
-          <h4 style={{ margin: '0 0 4px', fontSize: '0.95rem' }}>Event ID: {event.id}</h4>
-          <p style={{ margin: '0 0 2px', fontSize: '0.85rem' }}><strong>Zone ID:</strong> {event.zone_id || 'N/A'}</p>
-          <p style={{ margin: '0 0 2px', fontSize: '0.85rem' }}><strong>Start:</strong> {new Date(event.start_datetime).toLocaleString()}</p>
-          <p style={{ margin: '0 0 10px', fontSize: '0.85rem' }}><strong>Duration:</strong> {event.duration_minutes ? `${event.duration_minutes} mins` : 'Unknown'}</p>
+        <div className="popup-content" style={{
+          fontFamily: 'inherit',
+          color: '#e8f4f8',
+          minWidth: '200px',
+          background: 'rgba(8, 15, 40, 0.75)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(0, 207, 255, 0.12)',
+          padding: '12px',
+          borderRadius: '8px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span className="popup-tag" style={{
+              background: event.priority?.toLowerCase() === 'high' ? 'var(--danger-dim)' : (event.priority?.toLowerCase() === 'medium' ? 'rgba(255,179,71,0.15)' : 'var(--success-dim)'),
+              color: event.priority?.toLowerCase() === 'high' ? 'var(--danger)' : (event.priority?.toLowerCase() === 'medium' ? 'var(--warning)' : 'var(--success)'),
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontSize: '0.7rem',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              display: 'inline-block'
+            }}>{event.event_type}</span>
+            <span style={{
+              background: 'rgba(255, 179, 71, 0.15)',
+              color: '#FFB347',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontSize: '0.7rem',
+              fontWeight: 'bold'
+            }}>Score Badge</span>
+          </div>
 
-          <div style={{ borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '10px', marginTop: '5px' }}>
+          <h4 style={{ margin: '0 0 6px', fontSize: '0.95rem', color: '#00D4FF' }}>Event ID: {event.id}</h4>
+          <p style={{ margin: '0 0 4px', fontSize: '0.82rem', color: '#8BA7C7' }}><strong style={{ color: '#FFFFFF' }}>Zone ID:</strong> {event.zone_id || 'N/A'}</p>
+          <p style={{ margin: '0 0 4px', fontSize: '0.82rem', color: '#8BA7C7' }}><strong style={{ color: '#FFFFFF' }}>Start:</strong> {new Date(event.start_datetime).toLocaleString()}</p>
+          <p style={{ margin: '0 0 12px', fontSize: '0.82rem', color: '#8BA7C7' }}><strong style={{ color: '#FFFFFF' }}>Duration:</strong> {event.duration_minutes ? `${event.duration_minutes} mins` : 'Unknown'}</p>
+
+          <div style={{ borderTop: '1px solid rgba(0,212,255,0.15)', paddingTop: '10px', marginTop: '5px' }}>
             {isThisEventPlaying ? (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px', color: '#475569' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px', color: '#8BA7C7' }}>
                   <span>Replay active</span>
                   <span>{replayProgress}%</span>
                 </div>
-                <div style={{ width: '100%', height: '6px', background: '#cbd5e1', borderRadius: '999px', overflow: 'hidden', marginBottom: '8px' }}>
-                  <div style={{ width: `${replayProgress}%`, height: '100%', background: '#3b82f6', transition: 'width 0.2s' }}></div>
+                <div style={{ width: '100%', height: '6px', background: 'var(--bg-inset)', borderRadius: '999px', overflow: 'hidden', marginBottom: '8px' }}>
+                  <div style={{ width: `${replayProgress}%`, height: '100%', background: '#00D4FF', transition: 'width 0.2s' }}></div>
                 </div>
                 <button 
                   onClick={stop}
                   style={{
                     width: '100%',
                     padding: '6px',
-                    background: '#ef4444',
+                    background: 'var(--danger)',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '6px',
@@ -136,8 +170,8 @@ function EventMarker({ event, onEventClick }) {
                   style={{
                     width: '100%',
                     padding: '6px',
-                    background: '#3b82f6',
-                    color: '#ffffff',
+                    background: '#00D4FF',
+                    color: '#050B18',
                     border: 'none',
                     borderRadius: '6px',
                     fontWeight: 'bold',
@@ -148,7 +182,7 @@ function EventMarker({ event, onEventClick }) {
                   ▶ Play Replay
                 </button>
                 {error && (
-                  <p style={{ color: '#ef4444', fontSize: '0.7rem', margin: '4px 0 0' }}>{error}</p>
+                  <p style={{ color: 'var(--danger)', fontSize: '0.7rem', margin: '4px 0 0' }}>{error}</p>
                 )}
               </div>
             )}

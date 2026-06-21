@@ -48,12 +48,6 @@ function ZoneChoropleth({ customScores: propCustomScores = null }) {
       })
   }, [])
 
-  const getZoneColor = (score) => {
-    if (score <= 33) return '#22c55e' // Green
-    if (score <= 66) return '#f59e0b' // Amber
-    return '#ef4444' // Red
-  }
-
   const getDisplayScore = (feature) => {
     const zoneId = feature.properties?.zone_id || ''
     const rawScore = (customScores && customScores[zoneId] !== undefined)
@@ -71,11 +65,30 @@ function ZoneChoropleth({ customScores: propCustomScores = null }) {
 
   const getStyle = (feature) => {
     const score = getDisplayScore(feature)
+    
+    // Map score to 5 discrete steps to easily differentiate adjacent zones
+    let stepRatio = 0.1
+    if (score >= 80) {
+      stepRatio = 1.0
+    } else if (score >= 60) {
+      stepRatio = 0.75
+    } else if (score >= 40) {
+      stepRatio = 0.5
+    } else if (score >= 20) {
+      stepRatio = 0.3
+    }
+    
+    // Interpolate color from green rgb(52, 199, 89) to red rgb(255, 59, 48) based on stepRatio
+    const r = Math.round(52 + (255 - 52) * stepRatio)
+    const g = Math.round(199 + (59 - 199) * stepRatio)
+    const b = Math.round(89 + (48 - 89) * stepRatio)
+    const opacity = 0.35 + (0.75 - 0.35) * stepRatio
+
     return {
-      color: 'rgba(255, 255, 255, 0.15)', // Minimalist semi-transparent boundary border
-      weight: 1.0,
-      fillColor: getZoneColor(score),
-      fillOpacity: 0.22 // Lower opacity for a sleek, matte black visualization
+      color: '#030303', // Dark high-contrast border separating zones
+      weight: 1.5, // Thicker border line
+      fillColor: `rgb(${r}, ${g}, ${b})`,
+      fillOpacity: opacity
     }
   }
 
@@ -93,11 +106,11 @@ function ZoneChoropleth({ customScores: propCustomScores = null }) {
 
         // Bind interactive elements
         layer.bindPopup(`
-          <div style="font-family: inherit; color: #1e293b;">
-            <h4 style="margin: 0 0 4px; font-size: 0.95rem;">${zoneName} (ID: ${zoneId})</h4>
-            <p style="margin: 0; font-size: 0.85rem;">
-              <strong>Relative Congestion:</strong> 
-              <span style="color: ${getZoneColor(score)}; font-weight: bold;">${Math.round(score)}/100</span>
+          <div style="font-family: inherit; color: #e8f4f8; background: rgba(8, 15, 40, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(0, 207, 255, 0.12); padding: 12px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            <h4 style="margin: 0 0 6px; font-size: 0.95rem; color: #7b61ff; font-weight: 700;">${zoneName} (ID: ${zoneId})</h4>
+            <p style="margin: 0; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <strong style="color: #5a7a8a;">Relative Congestion:</strong> 
+              <span style="background: rgba(0, 207, 255, 0.15); color: #00cfff; font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">${Math.round(score)}/100</span>
             </p>
           </div>
         `)
@@ -112,9 +125,9 @@ function ZoneChoropleth({ customScores: propCustomScores = null }) {
           mouseover: (e) => {
             const l = e.target
             l.setStyle({
-              fillOpacity: 0.45,
-              weight: 1.5,
-              color: '#ffffff' // Crisp white border highlight on hover
+              fillOpacity: 0.85,
+              weight: 1.8,
+              color: '#00cfff' // Glowing cyan border highlight on hover
             })
           },
           mouseout: (e) => {
