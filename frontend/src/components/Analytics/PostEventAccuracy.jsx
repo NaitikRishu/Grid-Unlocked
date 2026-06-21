@@ -23,11 +23,17 @@ function PostEventAccuracy() {
       })
   }, [])
 
-  const getErrorColor = (errPercent) => {
-    if (errPercent > 30) return '#ef4444' // Red
-    if (errPercent < 15) return '#10b981' // Green
-    return '#fbbf24' // Yellow/Amber
+  const getErrorColor = (absError) => {
+    if (absError > 30) return '#ef4444' // Red
+    if (absError > 10 && absError <= 30) return '#fbbf24' // Yellow/Amber
+    return '#10b981' // Green
   }
+
+  const cleanData = accuracyData.filter(
+    d =>
+      d.actual_duration > 0 &&
+      d.actual_duration <= 240
+  )
 
   return (
     <div className="panel panel--glow" style={{ padding: '24px', flex: '1', minHeight: '340px' }}>
@@ -46,7 +52,7 @@ function PostEventAccuracy() {
               <th style={{ padding: '10px 12px', fontWeight: '600' }}>Zone ID</th>
               <th style={{ padding: '10px 12px', fontWeight: '600' }}>Predicted Duration</th>
               <th style={{ padding: '10px 12px', fontWeight: '600' }}>Actual Duration</th>
-              <th style={{ padding: '10px 12px', fontWeight: '600' }}>Error %</th>
+              <th style={{ padding: '10px 12px', fontWeight: '600' }}>Absolute Error (min)</th>
             </tr>
           </thead>
           <tbody>
@@ -62,14 +68,14 @@ function PostEventAccuracy() {
                   {error}
                 </td>
               </tr>
-            ) : accuracyData.length === 0 ? (
+            ) : cleanData.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: '#a1a1aa' }}>
                   No historical event predictions found.
                 </td>
               </tr>
             ) : (
-              accuracyData.slice(0, 50).map((row, idx) => (
+              cleanData.slice(0, 50).map((row, idx) => (
                 <tr 
                   key={row.event_id} 
                   style={{ 
@@ -82,8 +88,8 @@ function PostEventAccuracy() {
                   <td style={{ padding: '10px 12px' }}>Zone {row.zone_id}</td>
                   <td style={{ padding: '10px 12px' }}>{row.predicted_duration} mins</td>
                   <td style={{ padding: '10px 12px' }}>{row.actual_duration} mins</td>
-                  <td style={{ padding: '10px 12px', fontWeight: '700', color: getErrorColor(row.error_percent) }}>
-                    {row.error_percent.toFixed(1)}%
+                  <td style={{ padding: '10px 12px', fontWeight: '700', color: getErrorColor(Math.abs(row.predicted_duration - row.actual_duration)) }}>
+                    {Math.round(Math.abs(row.predicted_duration - row.actual_duration))} min
                   </td>
                 </tr>
               ))
@@ -91,7 +97,7 @@ function PostEventAccuracy() {
           </tbody>
         </table>
       </div>
-      {accuracyData.length > 50 && (
+      {cleanData.length > 50 && (
         <p style={{ margin: '8px 0 0', fontSize: '0.76rem', color: '#a1a1aa', textAlign: 'right' }}>
           * Showing first 50 prediction metrics
         </p>
