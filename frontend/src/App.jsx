@@ -71,70 +71,24 @@ function App() {
 
   return (
     <main className="app-shell">
-      <Header />
-
-      <section className="status-strip">
-        <article className={`status-card ${backendState.ok ? 'is-good' : 'is-warn'}`}>
-          <p className="panel__label">Backend status</p>
-          <h2>{backendState.loading ? 'Checking...' : backendState.ok ? 'Connected' : 'Needs startup'}</h2>
-          <p className="panel__text">{backendState.message}</p>
-        </article>
-
-        <article className="status-card">
-          <p className="panel__label">Data status</p>
-          <h2>Phase 5 outputs present</h2>
-          <p className="panel__text">
-            Cleaned events, BBMP zones, and precomputed Dijkstra distance matrices are loaded and ready.
-          </p>
-        </article>
-
-        <article className="status-card">
-          <p className="panel__label">Map provider</p>
-          <h2>OpenStreetMap base active</h2>
-          <p className="panel__text">
-            Operating on local relative coordinate grids with interactive route planning overlays.
-          </p>
-        </article>
-      </section>
-
-      {/* Tabs Navigation Switcher */}
-      <section style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
-        <button 
-          onClick={() => setActiveTab('operations')}
-          className="chip"
-          style={{ 
-            background: activeTab === 'operations' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(9, 9, 11, 0.7)',
-            borderColor: activeTab === 'operations' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}
-        >
-          🚦 Live Operations Map
-        </button>
-        <button 
-          onClick={() => setActiveTab('analytics')}
-          className="chip"
-          style={{ 
-            background: activeTab === 'analytics' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(9, 9, 11, 0.7)',
-            borderColor: activeTab === 'analytics' ? '#ffffff' : 'rgba(255, 255, 255, 0.15)',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}
-        >
-          📊 Analytics Dashboard
-        </button>
-      </section>
+      <Header activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === 'operations' ? (
         <section className="workspace">
-          <Sidebar selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
-          <BengaluruMap selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
-          <aside className="sidebar">
+          <aside className="sidebar sidebar--left">
+            <Sidebar selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
+          </aside>
+          
+          <section className="map-container-wrapper">
+            <BengaluruMap selectedEventId={selectedEventId} onSelectEvent={setSelectedEventId} />
+          </section>
+
+          <aside className="sidebar sidebar--right">
             <WhatIfPanel selectedEvent={selectedEvent} />
           </aside>
         </section>
       ) : (
-        <section style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <section className="analytics-workspace">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px' }}>
             <DelayChart />
             <ZoneRankTable />
@@ -146,4 +100,4 @@ function App() {
   )
 }
 
-export default App;
+export default App

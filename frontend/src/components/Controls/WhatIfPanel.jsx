@@ -1,26 +1,55 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import TimeOffsetSlider from './TimeOffsetSlider'
 import client from '../../api/client'
 import { useAppStore } from '../../store/appStore'
+import { 
+  IconTrafficLights, IconMessageCircle, IconBan, IconTruckOff, 
+  IconSun, IconCloudRain, IconCloudStorm, IconTornado,
+  IconBulb, IconChartBar, IconCheck, IconAlertTriangle, IconShieldCheck, IconBarrierBlock, IconCopy, IconCheckbox
+} from '@tabler/icons-react'
 
 function WhatIfPanel({ selectedEvent }) {
-  const { startSimulation, setSimulationResults, clearSimulation, isSimulating, simulationActive } = useAppStore()
+  const { 
+    startSimulation, 
+    setSimulationResults, 
+    clearSimulation, 
+    isSimulating, 
+    simulationActive,
+    simulationDelaySaved,
+    predictedDuration,
+    highImpact,
+    resourceAllocation
+  } = useAppStore()
   
   const [manpower, setManpower] = useState(15)
   const [barricades, setBarricades] = useState(5)
   const [diversionActive, setDiversionActive] = useState(true)
   const [offsetMinutes, setOffsetMinutes] = useState(0)
+  const [signalOptimized, setSignalOptimized] = useState(false)
+  const [vmsActive, setVmsActive] = useState(false)
+  const [clearwayEnforced, setClearwayEnforced] = useState(false)
+  const [heavyVehicleRestricted, setHeavyVehicleRestricted] = useState(false)
+  const [weather, setWeather] = useState('sunny')
+  const [copied, setCopied] = useState(false)
   const [error, setError] = useState(null)
+  const [recommendation, setRecommendation] = useState(null)
+  const [isRecommending, setIsRecommending] = useState(false)
 
-  // Reset local adjustments if selectedEvent changes
   useEffect(() => {
     setError(null)
+    setRecommendation(null)
+    setSignalOptimized(false)
+    setVmsActive(false)
+    setClearwayEnforced(false)
+    setHeavyVehicleRestricted(false)
+    setWeather('sunny')
+    setCopied(false)
     if (!selectedEvent) {
       clearSimulation()
     }
   }, [selectedEvent, clearSimulation])
 
-  const handleRunSimulation = async () => {
+  const handleRunSimulation = useCallback(async () => {
     if (!selectedEvent) return
     
     setError(null)
@@ -34,119 +63,440 @@ function WhatIfPanel({ selectedEvent }) {
       manpower: manpower,
       barricades: barricades,
       diversion_active: diversionActive,
-      start_time_offset_minutes: offsetMinutes
+      start_time_offset_minutes: offsetMinutes,
+      signal_optimized: signalOptimized,
+      vms_active: vmsActive,
+      clearway_enforced: clearwayEnforced,
+      heavy_vehicle_restricted: heavyVehicleRestricted,
+      weather: weather
     }
 
     try {
       const response = await client.post('/simulate/', payload)
-      setSimulationResults(response.data)
+      setSimulationResults(response.data, payload)
     } catch (err) {
       console.error('Simulation execution failed:', err)
       setError(err.response?.data?.message || 'Error occurred running simulation.')
       clearSimulation()
     }
+  }, [
+    selectedEvent, manpower, barricades, diversionActive, offsetMinutes,
+    signalOptimized, vmsActive, clearwayEnforced, heavyVehicleRestricted,
+    weather, startSimulation, setSimulationResults, clearSimulation
+  ])
+
+  const handleAutoRecommend = async () => {
+    if (!selectedEvent) return
+    
+    setError(null)
+    setIsRecommending(true)
+
+    const payload = {
+      event_type: selectedEvent.event_type,
+      latitude: selectedEvent.lat,
+      longitude: selectedEvent.lon,
+      start_datetime: selectedEvent.start_datetime
+    }
+
+    try {
+      const response = await client.post('/simulate/recommend', payload)
+      const data = response.data
+      
+      setManpower(data.recommended_manpower)
+      setBarricades(data.recommended_barricades)
+      setDiversionActive(data.recommended_diversion_active)
+      setOffsetMinutes(data.recommended_offset_minutes)
+      setSignalOptimized(data.recommended_signal_optimized)
+      setVmsActive(data.recommended_vms_active)
+      setClearwayEnforced(data.recommended_clearway_enforced)
+      setHeavyVehicleRestricted(data.recommended_heavy_vehicle_restricted)
+      setRecommendation(data)
+      
+      startSimulation()
+      const simPayload = {
+        event_type: selectedEvent.event_type,
+        latitude: selectedEvent.lat,
+        longitude: selectedEvent.lon,
+        start_datetime: selectedEvent.start_datetime,
+        manpower: data.recommended_manpower,
+        barricades: data.recommended_barricades,
+        diversion_active: data.recommended_diversion_active,
+        start_time_offset_minutes: data.recommended_offset_minutes,
+        signal_optimized: data.recommended_signal_optimized,
+        vms_active: data.recommended_vms_active,
+        clearway_enforced: data.recommended_clearway_enforced,
+        heavy_vehicle_restricted: data.recommended_heavy_vehicle_restricted,
+        weather: weather
+      }
+      
+      const simResponse = await client.post('/simulate/', simPayload)
+      setSimulationResults(simResponse.data, simPayload)
+    } catch (err) {
+      console.error('Recommendation fetch failed:', err)
+      setError(err.response?.data?.message || 'Error occurred fetching recommendations.')
+      clearSimulation()
+    } finally {
+      setIsRecommending(false)
+    }
   }
+
+  const handleCopyBrief = () => {
+    if (!selectedEvent) return
+    
+    const brief = `=== TRAFFIC OPERATIONS DISPATCH BRIEFING ===
+Incident: ${selectedEvent.event_cause || selectedEvent.event_type.replace('_', ' ')}
+Priority: ${selectedEvent.priority || 'medium'}
+Location: Ward ${selectedEvent.zone_id || 'N/A'} (Centroid: Lat ${selectedEvent.lat}, Lon ${selectedEvent.lon})
+Weather Condition: ${weather.toUpperCase()}
+
+DISPATCH INSTRUCTIONS:
+- Police Officers deployed: ${manpower} officers
+- Barricades deployed: ${barricades} barricades
+- Detour status: ${diversionActive ? 'ACTIVE' : 'INACTIVE'}
+- Active Traffic Policies:
+  * Signal Optimization: ${signalOptimized ? 'ACTIVE' : 'INACTIVE'}
+  * VMS display boards: ${vmsActive ? 'ACTIVE' : 'INACTIVE'}
+  * Clearway parking restrictions: ${clearwayEnforced ? 'ACTIVE' : 'INACTIVE'}
+  * Heavy vehicle ban: ${heavyVehicleRestricted ? 'ACTIVE' : 'INACTIVE'}
+
+EXPECTED IMPACT OUTCOME:
+- Estimated travel delay saved: ${simulationDelaySaved} minutes
+- New projected congestion duration: ${predictedDuration} minutes
+- Status: Operations plan simulated and active.`
+
+    navigator.clipboard.writeText(brief)
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+      .catch((err) => {
+        console.error('Failed to copy dispatch brief:', err)
+      })
+  }
+
+  useEffect(() => {
+    if (!selectedEvent) return
+    const timer = setTimeout(() => {
+      handleRunSimulation()
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [
+    selectedEvent?.id, manpower, barricades, diversionActive, offsetMinutes,
+    signalOptimized, vmsActive, clearwayEnforced, heavyVehicleRestricted,
+    weather, handleRunSimulation
+  ])
 
   if (!selectedEvent) {
     return (
-      <div className="panel panel--glow">
-        <p className="panel__label">Scenario Planner</p>
-        <h2>What-If Simulator</h2>
-        <p className="panel__text" style={{ marginTop: '12px', fontSize: '0.88rem' }}>
+      <div style={{ padding: '24px 20px' }}>
+        <p className="text-eyebrow">Scenario Planner</p>
+        <h2 className="text-section-heading">What-If Simulator</h2>
+        <p className="text-body" style={{ marginTop: '12px' }}>
           Select an incident report from the Incident Log to run a mitigation simulation.
         </p>
       </div>
     )
   }
 
-  return (
-    <div className="panel panel--glow">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <p className="panel__label">Mitigation Scenario</p>
-        {simulationActive && (
-          <button 
-            className="refresh-btn" 
-            style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: '#a1a1aa', textDecoration: 'none' }}
-            onClick={clearSimulation}
-          >
-            [ Reset ]
-          </button>
-        )}
+  const ToggleSwitch = ({ checked, onChange }) => (
+    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
+      <input type="checkbox" checked={checked} onChange={onChange} style={{ opacity: 0, position: 'absolute' }} />
+      <div style={{
+        width: '28px',
+        height: '16px',
+        borderRadius: '8px',
+        background: checked ? 'var(--accent)' : 'rgba(120,120,128,0.2)',
+        transition: 'background 0.15s ease',
+        position: 'relative'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: '2px', left: '2px',
+          width: '12px', height: '12px',
+          borderRadius: '50%', background: '#ffffff',
+          transition: 'transform 0.15s ease',
+          transform: checked ? 'translateX(12px)' : 'translateX(0px)'
+        }} />
       </div>
-      <h2>What-If Simulator</h2>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+    </label>
+  )
+
+  const ActionRow = ({ icon, title, sub, checked, onChange, hasDivider = true, color = 'var(--text-secondary)' }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: hasDivider ? '1px solid var(--border)' : 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ color: checked ? color : 'var(--text-muted)' }}>{icon}</div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{title}</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{sub}</span>
+        </div>
+      </div>
+      <ToggleSwitch checked={checked} onChange={onChange} />
+    </div>
+  )
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <p className="text-eyebrow" style={{ margin: 0 }}>MITIGATION SCENARIO</p>
+          {simulationActive && (
+            <button onClick={clearSimulation} style={{ color: 'var(--text-muted)', background: 'none', border: 'none', fontSize: '11px', fontWeight: 500, cursor: 'pointer', padding: 0 }}>
+              Reset
+            </button>
+          )}
+        </div>
+        <h2 className="text-section-heading">What-If Simulator</h2>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         
-        {/* Manpower Slider */}
-        <div className="control-slider">
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#a1a1aa' }}>
-            <span>Police Officers</span>
-            <span style={{ fontWeight: '700', color: '#ffffff' }}>{manpower}</span>
+        {/* Weather Scenario Selector */}
+        <div>
+          <p className="text-eyebrow">WEATHER SCENARIO</p>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {['sunny', 'rainy', 'monsoon', 'thunderstorm'].map((w) => {
+              const active = weather === w
+              return (
+                <button
+                  key={w}
+                  onClick={() => setWeather(w)}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '8px 0',
+                    fontSize: '11px',
+                    fontWeight: active ? 600 : 500,
+                    color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                    background: active ? 'var(--accent-dim)' : 'transparent',
+                    border: active ? '1px solid rgba(59,158,255,0.25)' : '1px solid var(--border)',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {w === 'sunny' && <IconSun size={14} />}
+                  {w === 'rainy' && <IconCloudRain size={14} />}
+                  {w === 'monsoon' && <IconCloudStorm size={14} />}
+                  {w === 'thunderstorm' && <IconTornado size={14} />}
+                  <span style={{ textTransform: 'capitalize' }}>{w}</span>
+                </button>
+              )
+            })}
           </div>
-          <input 
-            type="range" 
-            min="0" 
-            max="50" 
-            value={manpower} 
-            onChange={(e) => setManpower(parseInt(e.target.value))}
-            style={{ width: '100%', accentColor: '#ffffff', cursor: 'pointer' }}
-          />
+        </div>
+        
+        {/* Sliders */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <IconShieldCheck size={12} /> Police Officers
+            </span>
+            <span className="text-mono" style={{ color: 'var(--text-primary)' }}>{manpower}</span>
+          </div>
+          <input type="range" min="0" max="50" value={manpower} onChange={(e) => setManpower(parseInt(e.target.value))} style={{ width: '100%', accentColor: 'var(--text-primary)' }} />
         </div>
 
-        {/* Barricades Slider */}
-        <div className="control-slider">
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#a1a1aa' }}>
-            <span>Barricades</span>
-            <span style={{ fontWeight: '700', color: '#ffffff' }}>{barricades}</span>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <IconBarrierBlock size={12} /> Barricades
+            </span>
+            <span className="text-mono" style={{ color: 'var(--text-primary)' }}>{barricades}</span>
           </div>
-          <input 
-            type="range" 
-            min="0" 
-            max="20" 
-            value={barricades} 
-            onChange={(e) => setBarricades(parseInt(e.target.value))}
-            style={{ width: '100%', accentColor: '#ffffff', cursor: 'pointer' }}
-          />
+          <input type="range" min="0" max="20" value={barricades} onChange={(e) => setBarricades(parseInt(e.target.value))} style={{ width: '100%', accentColor: 'var(--text-primary)' }} />
         </div>
 
         {/* Start Time Offset (TimeOffsetSlider) */}
-        <TimeOffsetSlider value={offsetMinutes} onChange={setOffsetMinutes} />
+        <div style={{ padding: '4px 0' }}>
+           <TimeOffsetSlider value={offsetMinutes} onChange={setOffsetMinutes} />
+        </div>
 
-        {/* Diversion Toggle */}
-        <label className="control-toggle" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', cursor: 'pointer', userSelect: 'none' }}>
-          <span style={{ fontSize: '0.8rem', color: '#a1a1aa' }}>Activate Diversion Routes</span>
-          <input 
-            type="checkbox" 
-            checked={diversionActive} 
-            onChange={() => setDiversionActive(!diversionActive)}
-            style={{ accentColor: '#ffffff', cursor: 'pointer' }}
-          />
-        </label>
+        <ActionRow 
+          icon={<IconBarrierBlock size={18} stroke={1.5} />}
+          color="var(--success)"
+          title="Activate Diversion Routes" 
+          sub="Divert traffic away from epicenter" 
+          checked={diversionActive} 
+          onChange={() => setDiversionActive(!diversionActive)} 
+        />
+
+        {/* Policies */}
+        <div>
+          <p className="text-eyebrow">MITIGATION POLICIES</p>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <ActionRow 
+              icon={<IconTrafficLights size={18} stroke={1.5} />}
+              color="var(--accent)"
+              title="Optimize Signal Timing" 
+              sub="Improves average speed by 30%" 
+              checked={signalOptimized} 
+              onChange={() => setSignalOptimized(!signalOptimized)} 
+            />
+            <ActionRow 
+              icon={<IconMessageCircle size={18} stroke={1.5} />}
+              color="var(--accent)"
+              title="Activate VMS Signboards" 
+              sub="Alert drivers of detour ahead" 
+              checked={vmsActive} 
+              onChange={() => setVmsActive(!vmsActive)} 
+            />
+            <ActionRow 
+              icon={<IconBan size={18} stroke={1.5} />}
+              color="var(--warning)"
+              title="Enforce Clearway (No-Parking)" 
+              sub="Removes curb lane obstructions" 
+              checked={clearwayEnforced} 
+              onChange={() => setClearwayEnforced(!clearwayEnforced)} 
+            />
+            <ActionRow 
+              icon={<IconTruckOff size={18} stroke={1.5} />}
+              color="var(--danger)"
+              title="Heavy Vehicle Restriction" 
+              sub="Bans multi-axle freight trucks" 
+              checked={heavyVehicleRestricted} 
+              onChange={() => setHeavyVehicleRestricted(!heavyVehicleRestricted)} 
+              hasDivider={false} 
+            />
+          </div>
+        </div>
 
         {error && (
-          <p style={{ color: '#ff4d4d', fontSize: '0.78rem', margin: '0' }}>{error}</p>
+          <p style={{ color: 'var(--danger)', fontSize: '12px', margin: '0' }}>{error}</p>
         )}
 
-        <button 
-          onClick={handleRunSimulation} 
-          disabled={isSimulating}
-          className="chip"
-          style={{ 
-            width: '100%', 
-            padding: '12px', 
-            borderRadius: '12px', 
-            fontWeight: '700', 
-            border: '1px solid rgba(255,255,255,0.2)',
-            background: isSimulating ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)',
-            color: '#ffffff',
-            cursor: isSimulating ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-            marginTop: '8px',
-            textAlign: 'center'
-          }}
-        >
-          {isSimulating ? 'Calculating Impacts...' : 'Run Scenario Simulation'}
-        </button>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+          <button 
+            onClick={handleAutoRecommend} 
+            disabled={isRecommending || isSimulating}
+            style={{ 
+              flex: 1,
+              fontWeight: 500,
+              fontSize: '12px',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-strong)',
+              background: 'transparent',
+              padding: '10px 0',
+              borderRadius: '8px',
+              cursor: (isRecommending || isSimulating) ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {isRecommending ? 'Analyzing...' : 'Auto-Recommend'}
+          </button>
+          
+          <button 
+            onClick={handleRunSimulation} 
+            disabled={isSimulating || isRecommending}
+            style={{ 
+              flex: 1.2,
+              fontWeight: 600,
+              fontSize: '12px',
+              color: '#ffffff',
+              border: 'none',
+              background: 'var(--accent)',
+              padding: '10px 0',
+              borderRadius: '8px',
+              cursor: (isSimulating || isRecommending) ? 'not-allowed' : 'pointer',
+              opacity: (isSimulating || isRecommending) ? 0.7 : 1
+            }}
+          >
+            {isSimulating ? 'Simulating...' : 'Run Simulation'}
+          </button>
+        </div>
+
+        {recommendation && (
+          <div className="card" style={{ padding: '12px', marginTop: '8px' }}>
+            <h4 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <IconBulb size={14} color="var(--accent)" /> Smart Recommendation
+            </h4>
+            <p className="text-body" style={{ margin: '6px 0 0' }}>
+              {recommendation.explanation}
+            </p>
+          </div>
+        )}
+
+        {simulationActive && (
+          <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <p className="text-eyebrow" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <IconChartBar size={12} color="var(--success)" /> SIMULATION RESULTS
+              </p>
+              <button 
+                onClick={handleCopyBrief}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent)',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                {copied ? <IconCheck size={12} /> : <IconCopy size={12} />}
+                {copied ? 'Copied!' : 'Copy Brief'}
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span className="text-eyebrow">DELAY SAVED</span>
+                <span className="text-metric-small" style={{ color: 'var(--success)' }}>{simulationDelaySaved} mins</span>
+              </div>
+              <div style={{ width: '1px', background: 'var(--border)' }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span className="text-eyebrow">NEW DURATION</span>
+                <span className="text-metric-small" style={{ color: 'var(--text-primary)' }}>{predictedDuration} mins</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {diversionActive ? (
+                <>
+                  <IconCheckbox size={14} color="var(--success)" />
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Alternate routes active. Traffic diverted.</span>
+                </>
+              ) : (
+                <>
+                  <IconAlertTriangle size={14} color="var(--warning)" />
+                  <span style={{ fontSize: '11px', color: 'var(--warning)' }}>Route diversion inactive. Congestion localized.</span>
+                </>
+              )}
+            </div>
+
+            {resourceAllocation && Object.keys(resourceAllocation).length > 0 && (
+              <div>
+                <p className="text-eyebrow" style={{ marginTop: '8px' }}>SMART RESOURCE DISPATCH</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {Object.entries(resourceAllocation)
+                    .filter(([_, alloc]) => alloc.police > 0 || alloc.barricades > 0)
+                    .slice(0, 4)
+                    .map(([zoneId, alloc]) => (
+                      <div key={zoneId} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '11px',
+                        padding: '6px 0',
+                        borderBottom: '1px solid var(--border)'
+                      }}>
+                        <span className="text-mono" style={{ color: 'var(--text-primary)' }}>Ward {zoneId}</span>
+                        <span className="text-mono" style={{ color: 'var(--text-secondary)' }}>
+                          {alloc.police} police &middot; {alloc.barricades} barricades
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

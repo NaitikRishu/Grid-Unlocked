@@ -115,12 +115,38 @@ def estimate_delay(congestion_score: float) -> float:
     base_delay = 10.0
     return round(base_delay * (1.0 + float(congestion_score) / 50.0), 1)
 
-def routes_to_geojson(G, routes_list: list, congestion_score: float) -> dict:
+def edges_to_geojson(G, edges_list: list, label: str) -> list:
+    """Converts a list of edge tuples (u, v, k) into a list of GeoJSON Features representing blocked segments."""
+    features = []
+    for u, v, k in edges_list:
+        edge_data = G.get_edge_data(u, v, k)
+        if edge_data and 'geometry' in edge_data:
+            geom = edge_data['geometry']
+            coords = list(geom.coords)
+        else:
+            node_u = G.nodes[u]
+            node_v = G.nodes[v]
+            coords = [[node_u['x'], node_u['y']], [node_v['x'], node_v['y']]]
+            
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": coords
+            },
+            "properties": {
+                "route_label": label,
+                "is_blocked": True
+            }
+        })
+    return features
+
+def routes_to_geojson(G, routes_list: list, congestion_score: float, blocked_edges: list = None, delay_multiplier: float = 1.0) -> dict:
     """Converts alternate routes to a standard GeoJSON FeatureCollection."""
     labels = ["Fastest alternate", "Second alternate", "Third alternate"]
     features = []
     
-    delay = estimate_delay(congestion_score)
+    delay = estimate_delay(congestion_score) * delay_multiplier
     for i, path in enumerate(routes_list):
         label = labels[i] if i < len(labels) else f"Alternate {i+1}"
         try:
@@ -128,6 +154,13 @@ def routes_to_geojson(G, routes_list: list, congestion_score: float) -> dict:
             features.append(feat)
         except Exception as e:
             print(f"Error converting route to geojson: {e}")
+            
+    if blocked_edges:
+        try:
+            blocked_features = edges_to_geojson(G, blocked_edges, "Congested Corridor")
+            features.extend(blocked_features)
+        except Exception as e:
+            print(f"Error converting blocked edges to geojson: {e}")
             
     return {
         "type": "FeatureCollection",
@@ -163,7 +196,23 @@ def get_route_for_event(G, event_id: str, events_df=None, mapping_df=None) -> di
     """Gets routes for an event, loading from cache or computing live and updating cache."""
     cache = load_route_cache()
     if event_id in cache:
-        return cache[event_id]
+        geojson = cache[event_id]
+        # Overlay the blocked edges dynamically if not already in features
+        has_blocked = any(f.get("properties", {}).get("is_blocked") for f in geojson.get("features", []))
+        if not has_blocked:
+            if events_df is None:
+                events_df = pd.read_csv(EVENTS_PATH)
+            event_row = events_df[events_df['id'] == event_id]
+            if not event_row.empty:
+                event = event_row.iloc[0]
+                lat = float(event['latitude'])
+                lon = float(event['longitude'])
+                blocked = get_blocked_edges(G, lat, lon, radius_m=500)
+                blocked_features = edges_to_geojson(G, blocked, "Congested Corridor")
+                import copy
+                geojson = copy.deepcopy(geojson)
+                geojson["features"].extend(blocked_features)
+        return geojson
         
     # Live computation fallback
     if events_df is None:
@@ -172,18 +221,22 @@ def get_route_for_event(G, event_id: str, events_df=None, mapping_df=None) -> di
         mapping_df = pd.read_csv(MAPPING_PATH)
         
     event_row = events_df[events_df['id'] == event_id]
-    mapping_row = mapping_df[mapping_df['event_id'] == event_id]
     
-    if event_row.empty or mapping_row.empty:
+    if event_row.empty:
         # Default empty FeatureCollection
         return {"type": "FeatureCollection", "features": []}
         
     event = event_row.iloc[0]
-    mapping = mapping_row.iloc[0]
-    
-    origin_node = int(mapping['nearest_node_id'])
     lat = float(event['latitude'])
     lon = float(event['longitude'])
+    
+    mapping_row = mapping_df[mapping_df['event_id'] == event_id]
+    if not mapping_row.empty:
+        mapping = mapping_row.iloc[0]
+        origin_node = int(mapping['nearest_node_id'])
+    else:
+        from ml.src.graph_utils import get_nearest_node
+        origin_node = get_nearest_node(G, lat, lon)
     
     # Calculate congestion score
     duration = float(event['event_duration_minutes']) if pd.notna(event['event_duration_minutes']) else 30.0
@@ -193,7 +246,7 @@ def get_route_for_event(G, event_id: str, events_df=None, mapping_df=None) -> di
     dest_node = find_downstream_node(G, origin_node, target_distance_m=2000)
     blocked = get_blocked_edges(G, lat, lon, radius_m=500)
     routes = compute_alternate_routes(G, origin_node, dest_node, blocked)
-    geojson = routes_to_geojson(G, routes, congestion_score)
+    geojson = routes_to_geojson(G, routes, congestion_score, blocked)
     
     # Save to cache
     cache[event_id] = geojson
