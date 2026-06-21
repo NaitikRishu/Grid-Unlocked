@@ -280,7 +280,7 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
       </div>
 
       {/* Replay Bar (Below Map) */}
-      {selectedEventId && (
+      {selectedEventId && !replayError && (
         <div style={{
           padding: '10px 16px', background: 'var(--bg-surface)', borderTop: '1px solid var(--border)', flexShrink: 0
         }}>
@@ -289,10 +289,6 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
               <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--text-secondary)' }} />
               <span className="text-mono" style={{ color: 'var(--text-secondary)' }}>LOADING REPLAY TIMELINE...</span>
             </div>
-          ) : replayError ? (
-            <p style={{ color: 'var(--danger)', fontSize: '11px', textAlign: 'center', margin: '6px 0', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
-              {replayError}
-            </p>
           ) : replaySnapshots ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button
