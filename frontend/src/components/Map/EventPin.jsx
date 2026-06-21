@@ -5,13 +5,38 @@ import client from '../../api/client'
 import { useAppStore } from '../../store/appStore'
 import { useReplay } from '../../hooks/useReplay'
 
-// Custom marker pin styled with HTML/CSS for a premium glowing indicator look
-const eventIcon = L.divIcon({
-  className: 'custom-event-pin',
-  html: `<div class="pin-pulse"></div><div class="pin-core"></div>`,
-  iconSize: [20, 20],
-  iconAnchor: [10, 10]
+// Premium Map Marker Icon SVG Template
+const createPremiumMarker = (shellFill, shellStroke, discFill, discStroke, iconSvg) => L.divIcon({
+  html: `
+    <div style="width: 36px; height: 46px; position: relative;">
+      <svg width="36" height="46" viewBox="0 0 36 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="18" cy="44" rx="5" ry="2.5" fill="rgba(0,0,0,0.18)"/>
+        <path d="M18 2C9.163 2 2 9.163 2 18C2 28 18 42 18 42C18 42 34 28 34 18C34 9.163 26.837 2 18 2Z" 
+              fill="${shellFill}" stroke="${shellStroke}" stroke-width="0.8"/>
+        <circle cx="18" cy="16" r="10" fill="${discFill}" stroke="${discStroke}" stroke-width="0.6"/>
+        <g transform="translate(12, 10)">
+          ${iconSvg}
+        </g>
+      </svg>
+    </div>
+  `,
+  className: 'premium-marker',
+  iconSize: [36, 46],
+  iconAnchor: [18, 44]
 })
+
+// 4. High severity incident (Amber)
+const highSeverityIcon = createPremiumMarker(
+  '#2A1800', 'rgba(251,191,36,0.3)', '#3D2400', 'rgba(251,191,36,0.2)',
+  `<rect x="5" y="2" width="2" height="7" rx="1" fill="#FBBF24"/>
+   <rect x="5" y="10" width="2" height="2" rx="1" fill="#FBBF24"/>`
+)
+
+// 5. Low / resolved incident (Gray)
+const lowSeverityIcon = createPremiumMarker(
+  '#131316', 'rgba(255,255,255,0.1)', '#1C1C21', 'rgba(255,255,255,0.07)',
+  `<circle cx="6" cy="6" r="2" fill="#6B7280"/>`
+)
 
 const dummyEvents = [
   {
@@ -21,7 +46,8 @@ const dummyEvents = [
     lat: 12.9784,
     lon: 77.5906,
     start_datetime: '2026-06-19T08:30:00Z',
-    duration_minutes: 120
+    duration_minutes: 120,
+    priority: 'high'
   },
   {
     id: 'evt-2',
@@ -30,25 +56,8 @@ const dummyEvents = [
     lat: 12.9616,
     lon: 77.5746,
     start_datetime: '2026-06-19T09:00:00Z',
-    duration_minutes: 240
-  },
-  {
-    id: 'evt-3',
-    event_type: 'Vehicle Breakdown',
-    zone_id: '4882',
-    lat: 12.9912,
-    lon: 77.5948,
-    start_datetime: '2026-06-19T10:15:00Z',
-    duration_minutes: 45
-  },
-  {
-    id: 'evt-4',
-    event_type: 'Protest / Rally',
-    zone_id: '4883',
-    lat: 12.9716,
-    lon: 77.6046,
-    start_datetime: '2026-06-19T11:00:00Z',
-    duration_minutes: 180
+    duration_minutes: 240,
+    priority: 'low'
   }
 ]
 

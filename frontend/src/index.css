@@ -1,9 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 :root {
-  font-family: 'Inter', 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --bg-base: #09090B;
+  --bg-surface: #111113;
+  --bg-raised: #1A1A1E;
+  --bg-inset: #222226;
+  --border: rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.13);
+  --text-primary: #F2F2F7;
+  --text-secondary: #8E8E93;
+  --text-muted: #48484A;
+  --accent: #3B9EFF;
+  --accent-dim: rgba(59,158,255,0.12);
+  --danger: #FF453A;
+  --danger-dim: rgba(255,69,58,0.10);
+  --warning: #FF9F0A;
+  --success: #30D158;
+  --success-dim: rgba(48,209,88,0.10);
+
+  font-family: 'Inter', -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #ffffff;
-  background: #05050c; /* Deep midnight navy background */
+  color: var(--text-primary);
+  background-color: var(--bg-base);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,7 +37,7 @@ html,
 body,
 #root {
   min-height: 100%;
-  background-color: #05050c;
+  background-color: var(--bg-base);
 }
 
 body {
@@ -35,4 +54,5 @@ textarea {
 
 a {
   color: inherit;
+  text-decoration: none;
 }
