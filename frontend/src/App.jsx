@@ -113,6 +113,49 @@ function App() {
   const [selectedEventId, setSelectedEventId] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [activeTab, setActiveTab] = useState('operations')
+
+  useEffect(() => {
+    const root = document.documentElement
+    if (activeTab === 'analytics') {
+      root.style.setProperty('--bg-base', '#060608')
+      root.style.setProperty('--bg-surface', 'rgba(10, 10, 14, 0.75)')
+      root.style.setProperty('--bg-raised', 'rgba(18, 12, 22, 0.85)')
+      root.style.setProperty('--bg-inset', 'rgba(6, 6, 8, 0.5)')
+      root.style.setProperty('--border', 'rgba(255, 0, 127, 0.15)')
+      root.style.setProperty('--border-strong', 'rgba(255, 0, 127, 0.3)')
+      root.style.setProperty('--text-primary', '#f0e8f5')
+      root.style.setProperty('--text-secondary', '#6e6e8a')
+      root.style.setProperty('--text-muted', '#6e6e8a')
+      root.style.setProperty('--accent', '#ff007f')
+      root.style.setProperty('--accent-secondary', '#00f0ff')
+      root.style.setProperty('--accent-dim', 'rgba(255, 0, 127, 0.1)')
+      root.style.setProperty('--danger', '#ff003c')
+      root.style.setProperty('--danger-dim', 'rgba(255, 0, 60, 0.15)')
+      root.style.setProperty('--warning', '#ff9900')
+      root.style.setProperty('--success', '#00ff66')
+      root.style.setProperty('--success-dim', 'rgba(0, 255, 102, 0.15)')
+      root.style.setProperty('--grid-dot-color', 'rgba(255, 0, 127, 0.04)')
+    } else {
+      root.style.setProperty('--bg-base', '#030303')
+      root.style.setProperty('--bg-surface', 'rgba(15, 15, 15, 0.8)')
+      root.style.setProperty('--bg-raised', 'rgba(22, 22, 22, 0.9)')
+      root.style.setProperty('--bg-inset', 'rgba(5, 5, 5, 0.5)')
+      root.style.setProperty('--border', 'rgba(255, 255, 255, 0.12)')
+      root.style.setProperty('--border-strong', 'rgba(255, 255, 255, 0.25)')
+      root.style.setProperty('--text-primary', '#ffffff')
+      root.style.setProperty('--text-secondary', '#8a8a8a')
+      root.style.setProperty('--text-muted', '#555555')
+      root.style.setProperty('--accent', '#ffffff')
+      root.style.setProperty('--accent-secondary', '#d1d5db')
+      root.style.setProperty('--accent-dim', 'rgba(255, 255, 255, 0.1)')
+      root.style.setProperty('--danger', '#ffffff')
+      root.style.setProperty('--danger-dim', 'rgba(255, 255, 255, 0.15)')
+      root.style.setProperty('--warning', '#a3a3a3')
+      root.style.setProperty('--success', '#525252')
+      root.style.setProperty('--success-dim', 'rgba(255, 255, 255, 0.05)')
+      root.style.setProperty('--grid-dot-color', 'rgba(255, 255, 255, 0.03)')
+    }
+  }, [activeTab])
   const [backendState, setBackendState] = useState({
     loading: true,
     ok: false,
