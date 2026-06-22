@@ -77,10 +77,12 @@ def compute_alternate_routes(G, origin_node: int, dest_node: int, blocked_edges:
         
     G_copy = G.copy()
     
-    # Remove blocked edges from the routing graph
+    # Penalize blocked edges in the routing graph instead of removing them.
+    # This prevents NetworkXNoPath when the origin is inside the blocked area,
+    # forcing the path to exit the blocked zone as quickly as possible and detour around it.
     for u, v, k in blocked_edges:
         if G_copy.has_edge(u, v, k):
-            G_copy.remove_edge(u, v, k)
+            G_copy[u][v][k]['length'] = G_copy[u][v][k].get('length', 30.0) * 1000.0
             
     routes = []
     for i in range(num_routes):

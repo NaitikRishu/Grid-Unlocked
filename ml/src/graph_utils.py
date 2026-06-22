@@ -59,14 +59,53 @@ def get_edges_in_radius(G, lat: float, lon: float, radius_m: float) -> list:
     return list(precise_matches.index)
 
 def path_to_geojson(G, node_path: list, label: str, delay_minutes: float) -> dict:
-    """Converts a list of node IDs into a GeoJSON LineString Feature.
-    
-    Includes label and delay_minutes in properties.
-    """
+    """Converts a list of node IDs into a GeoJSON LineString Feature, tracing edge geometries."""
+    if not node_path:
+        return {
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": []
+            },
+            "properties": {}
+        }
+        
     coordinates = []
-    for node in node_path:
-        node_data = G.nodes[node]
-        coordinates.append([node_data['x'], node_data['y']])  # [longitude, latitude]
+    
+    # Start with the first node coordinate
+    node_data = G.nodes[node_path[0]]
+    coordinates.append([node_data['x'], node_data['y']])
+    
+    for u, v in zip(node_path[:-1], node_path[1:]):
+        edge_data = G.get_edge_data(u, v)
+        if edge_data:
+            # G is a MultiDiGraph, so get_edge_data returns a dict key -> attributes
+            # Select the edge with the shortest length
+            best_key = min(edge_data.keys(), key=lambda k: edge_data[k].get('length', float('inf')))
+            edge_attr = edge_data[best_key]
+            
+            if 'geometry' in edge_attr:
+                geom = edge_attr['geometry']
+                coords = list(geom.coords)
+                
+                # Check directionality: ensure we trace from u to v
+                u_data = G.nodes[u]
+                first_dist = (coords[0][0] - u_data['x'])**2 + (coords[0][1] - u_data['y'])**2
+                last_dist = (coords[-1][0] - u_data['x'])**2 + (coords[-1][1] - u_data['y'])**2
+                
+                # If the last coordinate of the geometry is closer to u, reverse the points order
+                if first_dist > last_dist:
+                    coords = coords[::-1]
+                    
+                # Append all coordinates except the first one (to prevent duplicates with u)
+                for pt in coords[1:]:
+                    coordinates.append([pt[0], pt[1]])
+            else:
+                node_v = G.nodes[v]
+                coordinates.append([node_v['x'], node_v['y']])
+        else:
+            node_v = G.nodes[v]
+            coordinates.append([node_v['x'], node_v['y']])
         
     return {
         "type": "Feature",

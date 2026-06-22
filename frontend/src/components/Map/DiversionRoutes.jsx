@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { GeoJSON, Marker } from 'react-leaflet'
+import { GeoJSON, Marker, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
 import { useAppStore } from '../../store/appStore'
 
@@ -75,6 +75,7 @@ function DiversionRoutes({ routes }) {
   } = useAppStore()
 
   const [activeRoutes, setActiveRoutes] = useState({ 0: true, 1: true, 2: true })
+  const [hoveredRouteIdx, setHoveredRouteIdx] = useState(null)
 
   useEffect(() => {
     setActiveRoutes({ 0: true, 1: true, 2: true })
@@ -85,17 +86,18 @@ function DiversionRoutes({ routes }) {
   const blockedFeatures = routes.features.filter(f => f.properties?.is_blocked)
   const altFeatures = routes.features.filter(f => !f.properties?.is_blocked)
   const fastestAltFeature = altFeatures.length > 0 ? altFeatures[0] : null
+  const colors = ['#00f0ff', '#ff9f0a', '#ff00ff'] // Cyan, Orange, Magenta
 
   const getRouteStyle = (feature) => {
     if (feature.properties?.is_blocked) {
       return { color: '#ff3b30', weight: 6, opacity: 0.95 } // Red for congested / blocked
     }
     const altIndex = altFeatures.indexOf(feature)
-    const colors = ['#00f0ff', '#ff9f0a', '#ff00ff'] // Cyan for fastest, Orange for secondary, Magenta for tertiary/others
+    const isHovered = hoveredRouteIdx === altIndex
     return {
       color: colors[altIndex] || '#ff00ff',
-      weight: altIndex === 0 ? 6.5 : (altIndex === 1 ? 4.5 : 3.5),
-      opacity: 0.95,
+      weight: (altIndex === 0 ? 6.5 : (altIndex === 1 ? 4.5 : 3.5)) + (isHovered ? 3.0 : 0),
+      opacity: isHovered ? 1.0 : 0.85,
       dashArray: altIndex > 0 ? '6, 8' : undefined
     }
   }
@@ -145,36 +147,66 @@ function DiversionRoutes({ routes }) {
     <>
       <div style={{
         position: 'absolute', top: '160px', left: '12px', zIndex: 1000,
-        background: 'rgba(15, 15, 15, 0.8)', backdropFilter: 'blur(16px)',
+        background: 'rgba(15, 15, 15, 0.82)', backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255, 255, 255, 0.12)',
-        borderRadius: '10px', padding: '12px', minWidth: '200px'
+        borderRadius: '10px', padding: '12px', minWidth: '220px',
+        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
       }}>
-        <p className="text-eyebrow" style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>DIVERSION OPTIONS</p>
+        <p className="text-eyebrow" style={{ color: 'var(--text-secondary)', marginBottom: '8px', fontSize: '10px', letterSpacing: '0.05em' }}>DIVERSION OPTIONS</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {altFeatures.map((feature, altIndex) => {
             const label = feature.properties?.route_label || `Alternate ${altIndex + 1}`
             const delay = feature.properties?.estimated_delay_minutes || 0
-            // Find the original index in the routes array for the toggle state
             const originalIdx = routes.features.indexOf(feature)
+            const routeColor = colors[altIndex] || '#ff00ff'
+            
             return (
-              <label key={originalIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <label 
+                key={originalIdx} 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  cursor: 'pointer',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  transition: 'background 0.2s',
+                  background: hoveredRouteIdx === altIndex ? 'rgba(255, 255, 255, 0.06)' : 'transparent'
+                }}
+                onMouseEnter={() => setHoveredRouteIdx(altIndex)}
+                onMouseLeave={() => setHoveredRouteIdx(null)}
+              >
                 <div style={{ position: 'relative', width: '16px', height: '16px' }}>
-                  <input type="checkbox" checked={activeRoutes[originalIdx] || false} onChange={() => setActiveRoutes({ ...activeRoutes, [originalIdx]: !activeRoutes[originalIdx] })} style={{ opacity: 0, position: 'absolute' }} />
+                  <input 
+                    type="checkbox" 
+                    checked={activeRoutes[originalIdx] || false} 
+                    onChange={() => setActiveRoutes({ ...activeRoutes, [originalIdx]: !activeRoutes[originalIdx] })} 
+                    style={{ opacity: 0, position: 'absolute', cursor: 'pointer', width: '100%', height: '100%', margin: 0 }} 
+                  />
                   <div style={{
-                    width: '16px', height: '16px', borderRadius: '4px',
-                    border: '1px solid ' + (activeRoutes[originalIdx] ? 'var(--accent)' : 'var(--border)'),
-                    background: activeRoutes[originalIdx] ? 'var(--accent)' : 'transparent',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '4px',
+                    border: `1.5px solid ${activeRoutes[originalIdx] ? routeColor : 'var(--border)'}`,
+                    background: activeRoutes[originalIdx] ? routeColor : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s ease'
                   }}>
                     {activeRoutes[originalIdx] && (
                       <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M1 4L3.5 6.5L9 1" stroke="#0f0f0f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     )}
                   </div>
                 </div>
-                <span style={{ fontSize: '11px', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
-                  {label} <span style={{ color: 'var(--text-muted)' }}>({Math.round(delay)}m)</span>
+                <span style={{ fontSize: '11px', color: '#ffffff', fontFamily: 'var(--font-mono)', display: 'flex', justifyContent: 'between', width: '100%' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: routeColor }} />
+                    {label}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', marginLeft: 'auto' }}>({Math.round(delay)}m)</span>
                 </span>
               </label>
             )
@@ -187,15 +219,40 @@ function DiversionRoutes({ routes }) {
           return (
             <React.Fragment key={idx + '-congested-grp'}>
               <GeoJSON data={feature} style={{ color: '#030303', weight: 11, opacity: 0.95 }} />
-              <GeoJSON data={feature} style={getRouteStyle(feature)} />
+              <GeoJSON data={feature} style={getRouteStyle(feature)}>
+                <Tooltip sticky>
+                  <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                    <strong>Congested Corridor</strong><br/>
+                    Avoid this area
+                  </div>
+                </Tooltip>
+              </GeoJSON>
             </React.Fragment>
           )
         }
         if (!activeRoutes[idx]) return null
+        const altIndex = altFeatures.indexOf(feature)
+        const label = feature.properties?.route_label || `Alternate ${altIndex + 1}`
+        const delay = feature.properties?.estimated_delay_minutes || 0
+        
         return (
           <React.Fragment key={idx + '-alt-grp'}>
             <GeoJSON data={feature} style={{ color: '#030303', weight: 9, opacity: 0.95 }} />
-            <GeoJSON data={feature} style={getRouteStyle(feature)} />
+            <GeoJSON 
+              data={feature} 
+              style={getRouteStyle(feature)}
+              eventHandlers={{
+                mouseover: () => setHoveredRouteIdx(altIndex),
+                mouseout: () => setHoveredRouteIdx(null)
+              }}
+            >
+              <Tooltip sticky>
+                <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                  <strong>{label}</strong><br/>
+                  Est. Delay: {Math.round(delay)} min
+                </div>
+              </Tooltip>
+            </GeoJSON>
           </React.Fragment>
         )
       })}
