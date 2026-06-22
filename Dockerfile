@@ -12,10 +12,12 @@ RUN cd server && npm install
 
 # Copy application code
 COPY ml/ ml/
-COPY server/ server/
 
-# Build graph during image construction
+# Build graph during image construction (time-consuming OSM query)
 RUN python ml/src/build_graph.py
+
+# Copy Node.js gateway code (built last so node updates deploy instantly)
+COPY server/ server/
 
 # Setup unified execution script
 COPY start.sh start.sh
