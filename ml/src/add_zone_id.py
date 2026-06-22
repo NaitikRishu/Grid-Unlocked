@@ -18,7 +18,7 @@ def main():
     zones_gdf = gpd.read_file(zones_path)
     
     print("Performing spatial join...")
-    geometry = [Point(lon, lat) for lat, lon in zip(df["longitude"], df["latitude"])]
+    geometry = [Point(lon, lat) for lat, lon in zip(df["latitude"], df["longitude"])]
     gdf = gpd.GeoDataFrame(df.copy(), geometry=geometry, crs="EPSG:4326")
     
     joined = gpd.sjoin(gdf, zones_gdf, how="left", predicate="within")
