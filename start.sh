@@ -12,9 +12,9 @@ cd ..
 # Give FastAPI a moment to bind to the port
 sleep 2
 
-# Start the Node Express Gateway on port 7860 (Hugging Face default)
+# Start the Node Express Gateway on port 7860 (Hugging Face default) or platform-provided PORT
 # Node will serve the WebSockets and proxy /api to the Python ML API
-export PORT=7860
+export PORT=${PORT:-7860}
 export FASTAPI_BASE_URL="http://127.0.0.1:8000"
 export CORS_ORIGINS="https://grid-unlocked-1782050398.netlify.app"
 

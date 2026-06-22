@@ -14,6 +14,9 @@ RUN cd server && npm install
 COPY ml/ ml/
 COPY server/ server/
 
+# Build graph during image construction
+RUN python ml/src/build_graph.py
+
 # Setup unified execution script
 COPY start.sh start.sh
 RUN chmod +x start.sh
