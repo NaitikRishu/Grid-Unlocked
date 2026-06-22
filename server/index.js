@@ -37,18 +37,3 @@ app.get('/python-log', (req, res) => {
     res.status(500).send('Log file not found or unreadable: ' + e.message);
   }
 });
-
-app.get('/debug-fs', (req, res) => {
-  try {
-    const mlDir = '../ml';
-    const geoFiles = fs.existsSync(`${mlDir}/data/geo`) ? fs.readdirSync(`${mlDir}/data/geo`) : [];
-    const processedFiles = fs.existsSync(`${mlDir}/data/processed`) ? fs.readdirSync(`${mlDir}/data/processed`) : [];
-    res.json({
-      geo: geoFiles,
-      processed: processedFiles,
-      cwd: process.cwd(),
-    });
-  } catch (e) {
-    res.status(500).send('Error reading FS: ' + e.message);
-  }
-});
