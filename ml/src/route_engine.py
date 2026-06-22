@@ -17,7 +17,7 @@ from ml.src.graph_utils import load_graph, get_edges_in_radius, path_to_geojson
 src_dir = os.path.dirname(os.path.abspath(__file__))
 ml_dir = os.path.dirname(src_dir)
 CACHE_PATH = os.path.join(ml_dir, 'data', 'processed', 'route_cache.pkl')
-EVENTS_PATH = os.path.join(ml_dir, 'data', 'processed', 'events_clean.csv')
+EVENTS_PATH = os.path.join(ml_dir, 'data', 'processed', 'events_ml_ready.csv')
 MAPPING_PATH = os.path.join(ml_dir, 'data', 'processed', 'node_mapping.csv')
 
 _route_cache = None

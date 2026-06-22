@@ -18,7 +18,7 @@ from ml.src.graph_utils import load_graph
 src_dir = os.path.dirname(os.path.abspath(__file__))
 ml_dir = os.path.dirname(src_dir)
 ZONES_PATH = os.path.join(ml_dir, "data", "geo", "bengaluru_zones.geojson")
-EVENTS_PATH = os.path.join(ml_dir, "data", "processed", "events_clean.csv")
+EVENTS_PATH = os.path.join(ml_dir, "data", "processed", "events_ml_ready.csv")
 CACHE_DIST_PATH = os.path.join(ml_dir, "data", "processed", "zone_distances.pkl")
 OUTPUT_PATH = os.path.join(ml_dir, "data", "processed", "replay_data.json")
 

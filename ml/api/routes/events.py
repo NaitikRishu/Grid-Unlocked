@@ -10,7 +10,7 @@ router = APIRouter()
 
 src_dir = os.path.dirname(os.path.abspath(__file__))
 ml_dir = os.path.dirname(os.path.dirname(src_dir))
-events_path = os.path.join(ml_dir, "data", "processed", "events_clean.csv")
+events_path = os.path.join(ml_dir, "data", "processed", "events_ml_ready.csv")
 fm_path = os.path.join(ml_dir, "data", "processed", "feature_matrix.csv")
 
 events_df = pd.DataFrame()
