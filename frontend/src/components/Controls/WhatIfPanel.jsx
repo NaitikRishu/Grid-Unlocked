@@ -658,15 +658,27 @@ EXPECTED IMPACT OUTCOME:
               )
             })()}
             
-            <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span className="text-eyebrow">DELAY SAVED</span>
-                <span className="text-metric-small" style={{ color: 'var(--success)' }}>{simulationDelaySaved} mins</span>
+                <span className="text-metric-small" style={{ color: 'var(--success)', fontSize: '14px', whiteSpace: 'nowrap' }}>{simulationDelaySaved} mins</span>
               </div>
               <div style={{ width: '1px', background: 'var(--border)' }} />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span className="text-eyebrow">NEW DURATION</span>
-                <span className="text-metric-small" style={{ color: 'var(--text-primary)' }}>{predictedDuration} mins</span>
+                <span className="text-metric-small" style={{ color: 'var(--text-primary)', fontSize: '14px', whiteSpace: 'nowrap' }}>{predictedDuration} mins</span>
+              </div>
+              <div style={{ width: '1px', background: 'var(--border)' }} />
+              <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span className="text-eyebrow">TOTAL DISPATCH</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
+                  <span className="text-mono" style={{ fontSize: '9px', color: '#00f0ff', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                    <IconShieldCheck size={10} color="#00f0ff" /> {manpower} POLICE
+                  </span>
+                  <span className="text-mono" style={{ fontSize: '9px', color: '#ff9f0a', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                    <IconBarrierBlock size={10} color="#ff9f0a" /> {barricades} BARRICADES
+                  </span>
+                </div>
               </div>
             </div>
 
