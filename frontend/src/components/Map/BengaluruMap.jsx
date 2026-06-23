@@ -8,6 +8,7 @@ import client from '../../api/client'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useAppStore } from '../../store/appStore'
+import { IconShieldCheck, IconBarrierBlock } from '@tabler/icons-react'
 
 const bengaluruCenter = [12.9716, 77.5946]
 
@@ -60,6 +61,8 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
     baselineScores,
     simulationScores,
     setCurrentPeakScore,
+    simManpower,
+    simBarricades,
   } = useAppStore()
 
   const mapProvider = 'osm'
@@ -289,15 +292,32 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
         {simulationActive && (
           <div style={{
             position: 'absolute', top: '12px', left: '12px', zIndex: 1000,
-            background: 'rgba(13, 27, 42, 0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+            background: 'rgba(13, 27, 42, 0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
             border: '1px solid rgba(0, 212, 255, 0.25)', borderRadius: '10px', padding: '12px 16px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)'
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+            display: 'flex', gap: '16px', alignItems: 'center'
           }}>
-            <p className="text-eyebrow" style={{ color: 'var(--text-secondary)' }}>SIMULATION</p>
-            <p style={{ fontSize: '20px', fontWeight: 600, color: 'var(--accent)', margin: '2px 0 0', letterSpacing: '-0.02em', textShadow: '0 0 8px rgba(0, 212, 255, 0.4)' }}>
-              +{Math.round(simulationDelaySaved)} min
-            </p>
-            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>saved via optimised routing</p>
+            <div>
+              <p className="text-eyebrow" style={{ color: 'var(--text-secondary)', margin: 0 }}>SIMULATION IMPACT</p>
+              <p style={{ fontSize: '20px', fontWeight: 600, color: 'var(--accent)', margin: '2px 0 0', letterSpacing: '-0.02em', textShadow: '0 0 8px rgba(0, 212, 255, 0.4)' }}>
+                +{Math.round(simulationDelaySaved)} min
+              </p>
+              <p style={{ fontSize: '10px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>saved via optimised routing</p>
+            </div>
+            
+            <div style={{ width: '1px', height: '40px', background: 'rgba(0, 212, 255, 0.2)' }} />
+            
+            <div>
+              <p className="text-eyebrow" style={{ color: 'var(--text-secondary)', margin: '0 0 4px 0' }}>TOTAL DISPATCH</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span className="text-mono" style={{ fontSize: '10px', color: '#00f0ff', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                  <IconShieldCheck size={10} color="#00f0ff" /> {simManpower} POLICE
+                </span>
+                <span className="text-mono" style={{ fontSize: '10px', color: '#ff9f0a', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                  <IconBarrierBlock size={10} color="#ff9f0a" /> {simBarricades} BARRICADES
+                </span>
+              </div>
+            </div>
           </div>
         )}
 
