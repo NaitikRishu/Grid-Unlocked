@@ -14,6 +14,28 @@ Grid Unlocked is a traffic intelligence and simulation platform for analyzing ur
 
 Repository: [NaitikRishu/Grid-Unlocked](https://github.com/NaitikRishu/Grid-Unlocked)
 
+## Quick Start (Local Setup & Run)
+
+To make running and evaluating the application from the submission ZIP as simple as possible, we have provided unified launcher scripts that automatically set up dependencies (virtual environment, pip packages, and npm libraries) and launch all services simultaneously.
+
+### For macOS and Linux:
+1. Open a terminal in the project root directory.
+2. Run:
+   ```bash
+   ./run_local.sh
+   ```
+3. Once running, open your browser and navigate to:
+   - **Frontend Dashboard:** [http://localhost:5173](http://localhost:5173)
+   - **FastAPI API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+   - **Express WS Gateway:** [http://localhost:3001](http://localhost:3001)
+4. Press `Ctrl+C` in the terminal to gracefully stop all services.
+
+### For Windows:
+1. Double-click the `run_local.bat` file in the project root directory (or run it via Command Prompt).
+2. Access the links above.
+
+---
+
 ## Project Summary
 
 The system combines:

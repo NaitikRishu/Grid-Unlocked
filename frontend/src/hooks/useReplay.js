@@ -25,7 +25,9 @@ export function useReplay(eventId) {
     setError(null)
     startReplay()
 
-    const ws = new WebSocket('ws://localhost:3001/replay')
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://'
+    const wsUrl = import.meta.env.VITE_WS_BASE_URL || `${protocol}${window.location.host}/replay`
+    const ws = new WebSocket(wsUrl)
     wsRef.current = ws
 
     ws.onopen = () => {
