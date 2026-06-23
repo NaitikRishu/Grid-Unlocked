@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { GeoJSON, Marker, Tooltip } from 'react-leaflet'
+import { GeoJSON, Marker, Tooltip, Circle } from 'react-leaflet'
 import L from 'leaflet'
 import { useAppStore } from '../../store/appStore'
 
@@ -66,12 +66,25 @@ const heavyVehicleIcon = createPremiumMarker(
    <line x1="1" y1="9" x2="11" y2="1" stroke="#F87171" stroke-width="1.5" stroke-linecap="round"/>`
 )
 
+// Recommended Barricade Placement (Orange theme)
+const barricadePlacementIcon = createPremiumMarker(
+  '#2B1408', 'rgba(249,115,22,0.3)', '#3E1F10', 'rgba(249,115,22,0.2)',
+  `<line x1="1" y1="3" x2="11" y2="3" stroke="#F97316" stroke-width="1.5" stroke-linecap="round"/>
+   <line x1="1" y1="7" x2="11" y2="7" stroke="#F97316" stroke-width="1.5" stroke-linecap="round"/>
+   <line x1="3" y1="1" x2="3" y2="11" stroke="#F97316" stroke-width="1.5" stroke-linecap="round"/>
+   <line x1="9" y1="1" x2="9" y2="11" stroke="#F97316" stroke-width="1.5" stroke-linecap="round"/>`
+)
+
 function DiversionRoutes({ routes }) {
   const { 
     simSignalOptimized, 
     simVmsActive, 
     simClearwayEnforced, 
-    simHeavyVehicleRestricted 
+    simHeavyVehicleRestricted,
+    simBarricades,
+    simDraftBarricades,
+    deployedBarricadeIds,
+    setDeployedBarricadeIds
   } = useAppStore()
 
   const [activeRoutes, setActiveRoutes] = useState({ 0: true, 1: true, 2: true })
@@ -79,12 +92,17 @@ function DiversionRoutes({ routes }) {
 
   useEffect(() => {
     setActiveRoutes({ 0: true, 1: true, 2: true })
+    if (routes && routes.features) {
+      const placements = routes.features.filter(f => f.properties?.is_barricade_placement)
+      const defaultIds = placements.slice(0, simBarricades || 5).map(p => p.properties?.node_id)
+      setDeployedBarricadeIds(defaultIds)
+    }
   }, [routes])
 
   if (!routes || !routes.features || routes.features.length === 0) return null
 
   const blockedFeatures = routes.features.filter(f => f.properties?.is_blocked)
-  const altFeatures = routes.features.filter(f => !f.properties?.is_blocked)
+  const altFeatures = routes.features.filter(f => !f.properties?.is_blocked && !f.properties?.is_barricade_placement && f.geometry?.type !== 'Point')
   const fastestAltFeature = altFeatures.length > 0 ? altFeatures[0] : null
   const colors = ['#00f0ff', '#ff9f0a', '#ff00ff'] // Cyan, Orange, Magenta
 
@@ -114,18 +132,61 @@ function DiversionRoutes({ routes }) {
     return null;
   }
 
+  const renderCongestionCircle = () => {
+    if (blockedFeatures.length === 0) return null
+    const epicenter = getFirstCoord(blockedFeatures[0].geometry)
+    if (!epicenter) return null
+    const activeBarricades = simDraftBarricades !== null ? simDraftBarricades : simBarricades
+    const effectiveRadius = Math.max(100.0, 500.0 - activeBarricades * 20.0)
+    return (
+      <Circle 
+        center={epicenter} 
+        radius={effectiveRadius}
+        pathOptions={{ color: '#ff3b30', fillColor: '#ff3b30', fillOpacity: 0.07, weight: 1.5, dashArray: '5, 8' }}
+      >
+        <Tooltip sticky>
+          <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#fff' }}>
+            <strong>Incident Congestion Zone</strong><br/>
+            Radius: {Math.round(effectiveRadius)}m ({activeBarricades} Barricades Active)<br/>
+            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px' }}>
+              Each barricade blocks incoming traffic, shrinking the congestion spread by 20m.
+            </span>
+          </div>
+        </Tooltip>
+      </Circle>
+    )
+  }
+
   const renderBarricadeMarker = () => {
     if (blockedFeatures.length === 0) return null
     const pos = getFirstCoord(blockedFeatures[0].geometry)
     if (!pos) return null
-    return <Marker position={pos} icon={barricadeIcon} />
+    return (
+      <Marker position={pos} icon={barricadeIcon}>
+        <Tooltip>
+          <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#fff' }}>
+            <strong>Road Barricade Deployed</strong><br/>
+            Isolating incident epicenter from incoming traffic.
+          </div>
+        </Tooltip>
+      </Marker>
+    )
   }
 
   const renderDiversionMarker = () => {
     if (!fastestAltFeature) return null
     const pos = getFirstCoord(fastestAltFeature.geometry)
     if (!pos) return null
-    return <Marker position={pos} icon={diversionIcon} />
+    return (
+      <Marker position={pos} icon={diversionIcon}>
+        <Tooltip>
+          <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#fff' }}>
+            <strong>Detour Origin</strong><br/>
+            Diversion routes start here to bypass congestion.
+          </div>
+        </Tooltip>
+      </Marker>
+    )
   }
 
   const renderPolicyMarkers = () => {
@@ -135,12 +196,88 @@ function DiversionRoutes({ routes }) {
 
     return (
       <>
-        {simSignalOptimized && <Marker position={[epicenter[0] + 0.0006, epicenter[1]]} icon={signalIcon} />}
-        {simVmsActive && <Marker position={[epicenter[0], epicenter[1] + 0.0007]} icon={vmsIcon} />}
-        {simClearwayEnforced && <Marker position={[epicenter[0] - 0.0006, epicenter[1]]} icon={clearwayIcon} />}
-        {simHeavyVehicleRestricted && <Marker position={[epicenter[0], epicenter[1] - 0.0007]} icon={heavyVehicleIcon} />}
+        {simSignalOptimized && (
+          <Marker position={[epicenter[0] + 0.0006, epicenter[1]]} icon={signalIcon}>
+            <Tooltip>
+              <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                <strong>Signal Timing Optimization</strong><br/>
+                Adjusting green intervals dynamically (+30% average speed).
+              </div>
+            </Tooltip>
+          </Marker>
+        )}
+        {simVmsActive && (
+          <Marker position={[epicenter[0], epicenter[1] + 0.0007]} icon={vmsIcon}>
+            <Tooltip>
+              <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                <strong>VMS Signboard Active</strong><br/>
+                Displaying real-time route advice to approaching drivers.
+              </div>
+            </Tooltip>
+          </Marker>
+        )}
+        {simClearwayEnforced && (
+          <Marker position={[epicenter[0] - 0.0006, epicenter[1]]} icon={clearwayIcon}>
+            <Tooltip>
+              <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                <strong>Clearway Parking Enforcement</strong><br/>
+                Clearing curb lanes to restore maximum physical road capacity.
+              </div>
+            </Tooltip>
+          </Marker>
+        )}
+        {simHeavyVehicleRestricted && (
+          <Marker position={[epicenter[0], epicenter[1] - 0.0007]} icon={heavyVehicleIcon}>
+            <Tooltip>
+              <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#fff' }}>
+                <strong>Heavy Freight Restriction</strong><br/>
+                Multi-axle trucks banned temporarily to prevent bottlenecks.
+              </div>
+            </Tooltip>
+          </Marker>
+        )}
       </>
     )
+  }
+
+  const renderBarricadePlacements = () => {
+    const placements = routes.features.filter(f => f.properties?.is_barricade_placement)
+    
+    const toggleBarricade = (nodeId) => {
+      let newIds
+      if (deployedBarricadeIds.includes(nodeId)) {
+        newIds = deployedBarricadeIds.filter(id => id !== nodeId)
+      } else {
+        newIds = [...deployedBarricadeIds, nodeId]
+      }
+      setDeployedBarricadeIds(newIds)
+    }
+
+    return placements.map((feat, idx) => {
+      const coords = feat.geometry?.coordinates
+      if (!coords || coords.length < 2) return null
+      const pos = [coords[1], coords[0]] // GeoJSON point is [lng, lat]
+      const nodeId = feat.properties?.node_id
+      const isActive = deployedBarricadeIds.includes(nodeId)
+      
+      return (
+        <Marker 
+          key={'barricade-placement-' + idx} 
+          position={pos} 
+          icon={isActive ? barricadeIcon : barricadePlacementIcon}
+          eventHandlers={{
+            click: () => toggleBarricade(nodeId)
+          }}
+        >
+          <Tooltip>
+            <div style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color: '#fff' }}>
+              <strong>{isActive ? 'Active Barricade' : 'Recommended Barricade'}</strong><br/>
+              {isActive ? 'Physically blocking traffic. Click to remove.' : 'Click to place barricade and block entrance.'}
+            </div>
+          </Tooltip>
+        </Marker>
+      )
+    })
   }
 
   return (
@@ -257,9 +394,11 @@ function DiversionRoutes({ routes }) {
         )
       })}
 
+      {renderCongestionCircle()}
       {renderBarricadeMarker()}
       {renderDiversionMarker()}
       {renderPolicyMarkers()}
+      {renderBarricadePlacements()}
     </>
   )
 }

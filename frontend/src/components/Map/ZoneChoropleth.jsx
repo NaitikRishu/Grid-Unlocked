@@ -4,7 +4,7 @@ import client from '../../api/client'
 import { useAppStore } from '../../store/appStore'
 
 function ZoneChoropleth({ customScores: propCustomScores = null }) {
-  const { simulationScores, simulationActive, replayScores, replayActive, setBaselineScores } = useAppStore()
+  const { simulationScores, simulationActive, replayScores, replayActive, setBaselineScores, currentPeakScore } = useAppStore()
   const customScores = propCustomScores || (replayActive ? replayScores : (simulationActive ? simulationScores : null))
   const [geoJsonData, setGeoJsonData] = useState(null)
   const [maxBaselineScore, setMaxBaselineScore] = useState(1)
@@ -55,8 +55,8 @@ function ZoneChoropleth({ customScores: propCustomScores = null }) {
       : (feature.properties?.baseline_score || 0)
 
     if (customScores) {
-      // Find the maximum score in customScores dynamically to scale it to [0, 100]
-      const maxCustom = Math.max(...Object.values(customScores).map(Number), 1)
+      // Use the stable peak score of the simulation/replay session for scaling
+      const maxCustom = currentPeakScore && currentPeakScore > 0 ? currentPeakScore : 100.0
       return (rawScore / maxCustom) * 100
     } else {
       return (rawScore / maxBaselineScore) * 100

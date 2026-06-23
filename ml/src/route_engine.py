@@ -161,6 +161,34 @@ def routes_to_geojson(G, routes_list: list, congestion_score: float, blocked_edg
         try:
             blocked_features = edges_to_geojson(G, blocked_edges, "Congested Corridor")
             features.extend(blocked_features)
+            
+            # Find boundary nodes for barricade placement
+            blocked_nodes = set()
+            for u, v, k in blocked_edges:
+                blocked_nodes.add(u)
+                blocked_nodes.add(v)
+                
+            boundary_nodes = []
+            for n in blocked_nodes:
+                # Find if node connects to the outside world
+                neighbors = set(G.successors(n)).union(set(G.predecessors(n)))
+                if any(nbr not in blocked_nodes for nbr in neighbors):
+                    boundary_nodes.append(n)
+                    
+            # Add boundary nodes as barricade recommendation pins (max 15 to avoid clutter)
+            for n in boundary_nodes[:15]:
+                node_data = G.nodes[n]
+                features.append({
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [node_data['x'], node_data['y']]
+                    },
+                    "properties": {
+                        "is_barricade_placement": True,
+                        "node_id": str(n)
+                    }
+                })
         except Exception as e:
             print(f"Error converting blocked edges to geojson: {e}")
             
