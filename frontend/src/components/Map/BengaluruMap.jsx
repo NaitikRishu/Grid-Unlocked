@@ -256,7 +256,7 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
           background: 'transparent'
         }}>
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--warning)' }} />
-          <span className="text-mono" style={{ color: 'var(--text-secondary)' }}>OSM Fallback</span>
+          <span className="text-mono" style={{ color: 'var(--text-secondary)' }}>Standard Base Map</span>
         </div>
       </div>
 
