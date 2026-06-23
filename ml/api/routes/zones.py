@@ -17,7 +17,15 @@ zone_scores_path = os.path.join(ml_dir, "data", "processed", "zone_scores.csv")
 
 # Compute baseline scores on startup
 baseline_scores = {}
-if os.path.exists(zone_scores_path):
+baseline_scores_json_path = os.path.join(ml_dir, "data", "processed", "baseline_scores.json")
+
+if os.path.exists(baseline_scores_json_path):
+    print("Loading baseline scores from baseline_scores.json...")
+    with open(baseline_scores_json_path, "r") as f:
+        raw_data = json.load(f)
+        baseline_scores = {clean_zone_id(k): float(v) for k, v in raw_data.items()}
+    print(f"Loaded baseline scores for {len(baseline_scores)} zones.")
+elif os.path.exists(zone_scores_path):
     print("Pre-calculating baseline zone scores from zone_scores.csv...")
     df_scores = pd.read_csv(zone_scores_path)
     avg_scores = df_scores.groupby("zone_id")["score"].mean().to_dict()
