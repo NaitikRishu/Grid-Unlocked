@@ -794,9 +794,11 @@ EXPECTED IMPACT OUTCOME:
             )}
 
             {resourceAllocation && Object.keys(resourceAllocation).length > 0 && (
-              <div>
-                <p className="text-eyebrow" style={{ marginTop: '8px' }}>SMART RESOURCE DISPATCH</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px', marginTop: '4px' }}>
+                <p className="text-eyebrow" style={{ margin: '0 0 10px 0', fontSize: '9px', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>
+                  SMART RESOURCE DISPATCH
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {Object.entries(resourceAllocation)
                     .filter(([_, alloc]) => alloc.police > 0 || alloc.barricades > 0)
                     .slice(0, 4)
@@ -805,14 +807,52 @@ EXPECTED IMPACT OUTCOME:
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        fontSize: '11px',
-                        padding: '6px 0',
-                        borderBottom: '1px solid var(--border)'
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        padding: '10px 12px',
                       }}>
-                        <span className="text-mono" style={{ color: 'var(--text-primary)' }}>Ward {zoneId}</span>
-                        <span className="text-mono" style={{ color: 'var(--text-secondary)' }}>
-                          {alloc.police} police &middot; {alloc.barricades} barricades
+                        <span className="text-mono" style={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: 600 }}>
+                          Ward {zoneId}
                         </span>
+                        
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {alloc.police > 0 && (
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              background: 'rgba(0, 240, 255, 0.06)',
+                              border: '1px solid rgba(0, 240, 255, 0.2)',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              fontFamily: 'var(--font-mono)'
+                            }}>
+                              <IconShieldCheck size={12} color="#00f0ff" />
+                              <span style={{ color: '#00f0ff', fontWeight: 700 }}>{alloc.police}</span>
+                              <span style={{ color: 'rgba(0, 240, 255, 0.6)', fontSize: '9px', fontWeight: 500 }}>POLICE</span>
+                            </div>
+                          )}
+
+                          {alloc.barricades > 0 && (
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              background: 'rgba(255, 159, 10, 0.06)',
+                              border: '1px solid rgba(255, 159, 10, 0.2)',
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              fontSize: '11px',
+                              fontFamily: 'var(--font-mono)'
+                            }}>
+                              <IconBarrierBlock size={12} color="#ff9f0a" />
+                              <span style={{ color: '#ff9f0a', fontWeight: 700 }}>{alloc.barricades}</span>
+                              <span style={{ color: 'rgba(255, 159, 10, 0.6)', fontSize: '9px', fontWeight: 500 }}>BARRICADES</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                 </div>
