@@ -30,11 +30,11 @@ const signalIcon = createPremiumMarker(
    <line x1="9" y1="3" x2="9" y2="9" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" />`
 )
 
-// 2. Detour (Blue)
+// 2. Detour (Cyan - highly visible)
 const diversionIcon = createPremiumMarker(
-  '#0A1F30', 'rgba(96,165,250,0.3)', '#132840', 'rgba(96,165,250,0.2)',
-  `<path d="M3 9 Q 3 3, 9 3 L 9 3" stroke="#60A5FA" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-   <path d="M6 0 L 9 3 L 6 6" stroke="#60A5FA" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`
+  '#002233', 'rgba(0,240,255,0.4)', '#003344', 'rgba(0,240,255,0.3)',
+  `<path d="M2 10V5.5A2.5 2.5 0 0 1 4.5 3H9" stroke="#00f0ff" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+   <path d="M6.5 0.5 L 9 3 L 6.5 5.5" stroke="#00f0ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`
 )
 
 // 3. Road Closed / Barricade (Red)
