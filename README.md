@@ -1,13 +1,3 @@
----
-title: Grid Unlocked Backend
-emoji: 🚦
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # Grid Unlocked: Predictive Traffic Twin and Control Room Simulator
 
 Grid Unlocked is an analytical framework and real-time digital twin designed to model downstream traffic cascades and calculate dynamic, congestion-penalized detour routes around urban disruptions. The platform provides municipal dispatchers and traffic engineers with a sandbox environment to simulate policy interventions and coordinate resource dispatches.
