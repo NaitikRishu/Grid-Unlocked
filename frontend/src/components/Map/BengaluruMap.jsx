@@ -170,7 +170,7 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
       try {
         const msg = JSON.parse(e.data)
         if (msg.type === 'SNAPSHOT') {
-          buffer.push(msg.data)
+          buffer.push(msg)
         } else if (msg.type === 'COMPLETE') {
           setReplaySnapshots(buffer)
           if (buffer.length > 0) {
