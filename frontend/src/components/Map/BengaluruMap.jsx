@@ -63,6 +63,11 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
     setCurrentPeakScore,
     simManpower,
     simBarricades,
+    simSignalOptimized,
+    simVmsActive,
+    simClearwayEnforced,
+    simHeavyVehicleRestricted,
+    predictedDuration,
   } = useAppStore()
 
   const mapProvider = 'osm'
@@ -291,14 +296,34 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
         {/* Simulation Banner (Floating Dark) */}
         {simulationActive && (
           <div style={{
-            position: 'absolute', top: '12px', left: '12px', zIndex: 1000,
+            position: 'absolute', top: '12px', left: '56px', zIndex: 1000,
             background: 'rgba(13, 27, 42, 0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
             border: '1px solid rgba(0, 212, 255, 0.25)', borderRadius: '10px', padding: '12px 16px',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
             display: 'flex', gap: '16px', alignItems: 'center'
           }}>
+            {/* Column 1: Impact & Risk */}
             <div>
-              <p className="text-eyebrow" style={{ color: 'var(--text-secondary)', margin: 0 }}>SIMULATION IMPACT</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <p className="text-eyebrow" style={{ color: 'var(--text-secondary)', margin: 0 }}>SIMULATION IMPACT</p>
+                {(() => {
+                  const score = Math.min(100, Math.round((predictedDuration / 120) * 100))
+                  const riskLvl = score >= 70 ? 'CRITICAL' : score >= 40 ? 'MEDIUM' : 'LOW'
+                  return (
+                    <span style={{
+                      fontSize: '8px',
+                      fontWeight: 'bold',
+                      padding: '1px 5px',
+                      borderRadius: '4px',
+                      background: riskLvl === 'CRITICAL' ? 'rgba(255,59,48,0.15)' : riskLvl === 'MEDIUM' ? 'rgba(255,159,10,0.15)' : 'rgba(0,240,255,0.15)',
+                      color: riskLvl === 'CRITICAL' ? '#ff3b30' : riskLvl === 'MEDIUM' ? '#ff9f0a' : '#00f0ff',
+                      border: `1px solid ${riskLvl === 'CRITICAL' ? 'rgba(255,59,48,0.3)' : riskLvl === 'MEDIUM' ? 'rgba(255,159,10,0.3)' : 'rgba(0,240,255,0.3)'}`,
+                    }}>
+                      {riskLvl}
+                    </span>
+                  )
+                })()}
+              </div>
               <p style={{ fontSize: '20px', fontWeight: 600, color: 'var(--accent)', margin: '2px 0 0', letterSpacing: '-0.02em', textShadow: '0 0 8px rgba(0, 212, 255, 0.4)' }}>
                 +{Math.round(simulationDelaySaved)} min
               </p>
@@ -307,6 +332,7 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
             
             <div style={{ width: '1px', height: '40px', background: 'rgba(0, 212, 255, 0.2)' }} />
             
+            {/* Column 2: Total Dispatch */}
             <div>
               <p className="text-eyebrow" style={{ color: 'var(--text-secondary)', margin: '0 0 4px 0' }}>TOTAL DISPATCH</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -318,6 +344,22 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
                 </span>
               </div>
             </div>
+
+            {/* Column 3: Active Policies */}
+            {(simSignalOptimized || simVmsActive || simClearwayEnforced || simHeavyVehicleRestricted) && (
+              <>
+                <div style={{ width: '1px', height: '40px', background: 'rgba(0, 212, 255, 0.2)' }} />
+                <div>
+                  <p className="text-eyebrow" style={{ color: 'var(--text-secondary)', margin: '0 0 4px 0' }}>ACTIVE POLICIES</p>
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '180px' }}>
+                    {simSignalOptimized && <span style={{ fontSize: '7px', padding: '1px 3px', background: 'rgba(0, 240, 255, 0.1)', color: '#00f0ff', borderRadius: '3px', border: '1px solid rgba(0, 240, 255, 0.2)', fontWeight: 600 }}>SIGNAL OPT</span>}
+                    {simVmsActive && <span style={{ fontSize: '7px', padding: '1px 3px', background: 'rgba(0, 240, 255, 0.1)', color: '#00f0ff', borderRadius: '3px', border: '1px solid rgba(0, 240, 255, 0.2)', fontWeight: 600 }}>VMS</span>}
+                    {simClearwayEnforced && <span style={{ fontSize: '7px', padding: '1px 3px', background: 'rgba(255, 159, 10, 0.1)', color: '#ff9f0a', borderRadius: '3px', border: '1px solid rgba(255, 159, 10, 0.2)', fontWeight: 600 }}>CLEARWAY</span>}
+                    {simHeavyVehicleRestricted && <span style={{ fontSize: '7px', padding: '1px 3px', background: 'rgba(255, 59, 48, 0.1)', color: '#ff3b30', borderRadius: '3px', border: '1px solid rgba(255, 59, 48, 0.2)', fontWeight: 600 }}>TRUCK BAN</span>}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
