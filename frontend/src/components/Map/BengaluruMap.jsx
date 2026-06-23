@@ -47,7 +47,6 @@ function MapEvents({ isPlanning, setPlanningCoords }) {
   })
   return null
 }
-
 function BengaluruMap({ selectedEventId, onSelectEvent }) {
   const {
     simulationActive,
@@ -57,6 +56,10 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
     planningLat,
     planningLon,
     setPlanningCoords,
+    setCurrentEventRoutes,
+    baselineScores,
+    simulationScores,
+    setCurrentPeakScore,
   } = useAppStore()
 
   const mapProvider = 'osm'
@@ -71,19 +74,66 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
   const [isBuffering, setIsBuffering] = useState(false)
   const [replayError, setReplayError] = useState(null)
 
+  // Generate simulated timeline snapshots for custom / run simulations
+  useEffect(() => {
+    if (simulationActive && simulationScores && baselineScores) {
+      const generatedSnapshots = []
+      const baseTime = Date.now()
+      
+      for (let s = 0; s < 20; s++) {
+        const progress = Math.round((s / 19) * 100)
+        const timestamp = new Date(baseTime + s * 3 * 60 * 1000).toISOString()
+        const stepScores = {}
+        
+        // Exponential decay of congestion back to baseline
+        const decayFactor = Math.exp(-s * 0.15)
+        
+        Object.keys(baselineScores).forEach((zoneId) => {
+          const base = baselineScores[zoneId] || 0
+          const peak = simulationScores[zoneId] !== undefined ? simulationScores[zoneId] : base
+          stepScores[zoneId] = base + (peak - base) * decayFactor
+        })
+        
+        generatedSnapshots.push({
+          timestamp,
+          zone_scores: stepScores,
+          progress_percent: progress
+        })
+      }
+      
+      setReplaySnapshots(generatedSnapshots)
+      setReplayStep(0)
+      setIsPlaying(false)
+      setReplayError(null)
+      setIsBuffering(false)
+    } else if (!simulationActive) {
+      // Clear generated snapshots only if we're not loading a historical event
+      if (!selectedEventId || selectedEventId.startsWith('CUSTOM')) {
+        setReplaySnapshots(null)
+        setReplayStep(0)
+        setIsPlaying(false)
+      }
+    }
+  }, [simulationActive, simulationScores, baselineScores, selectedEventId])
+
   useEffect(() => {
     if (selectedEventId) {
       client
         .get(`/routes/${selectedEventId}`)
-        .then((res) => setSelectedRoutes(res.data))
+        .then((res) => {
+          setSelectedRoutes(res.data)
+          setCurrentEventRoutes(res.data)
+        })
         .catch((err) => {
           console.warn(`Failed to fetch alternate routes for event ${selectedEventId}:`, err)
           setSelectedRoutes(null)
+          setCurrentEventRoutes(null)
         })
     } else {
       setSelectedRoutes(null)
+      setCurrentEventRoutes(null)
     }
-  }, [selectedEventId])
+  }, [selectedEventId, setCurrentEventRoutes])
 
   useEffect(() => {
     setReplaySnapshots(null)
@@ -95,7 +145,7 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
     if (!selectedEventId) return
 
     if (selectedEventId.startsWith('CUSTOM')) {
-      setReplayError('Replay timeline only available for historical incidents.')
+      // Don't show WS error for custom events, as the simulation timeline effect will populate replaySnapshots
       return
     }
 
@@ -115,6 +165,11 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
           buffer.push(msg.data)
         } else if (msg.type === 'COMPLETE') {
           setReplaySnapshots(buffer)
+          if (buffer.length > 0) {
+            const firstScores = buffer[0].zone_scores || {}
+            const maxScore = Math.max(...Object.values(firstScores).map(Number), 1)
+            setCurrentPeakScore(maxScore)
+          }
           setIsBuffering(false)
           ws.close()
         } else if (msg.type === 'ERROR') {
@@ -283,7 +338,7 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
       </div>
 
       {/* Replay Bar (Below Map) */}
-      {selectedEventId && !replayError && (
+      {replaySnapshots && (
         <div style={{
           padding: '10px 16px', background: 'var(--bg-surface)', borderTop: '1px solid var(--border)', flexShrink: 0
         }}>
@@ -292,8 +347,20 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
               <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--text-secondary)' }} />
               <span className="text-mono" style={{ color: 'var(--text-secondary)' }}>LOADING REPLAY TIMELINE...</span>
             </div>
-          ) : replaySnapshots ? (
+          ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span className="text-mono" style={{ 
+                fontSize: '9px', 
+                fontWeight: 'bold', 
+                padding: '3px 6px', 
+                borderRadius: '4px',
+                background: simulationActive ? 'rgba(0, 240, 255, 0.1)' : 'rgba(251, 159, 10, 0.1)',
+                color: simulationActive ? '#00f0ff' : '#ff9f0a',
+                border: simulationActive ? '1px solid rgba(0, 240, 255, 0.2)' : '1px solid rgba(251, 159, 10, 0.2)',
+                letterSpacing: '0.05em'
+              }}>
+                {simulationActive ? 'DISPERSION FORECAST' : 'HISTORICAL REPLAY'}
+              </span>
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
                 style={{ 
@@ -326,13 +393,13 @@ function BengaluruMap({ selectedEventId, onSelectEvent }) {
                   {replayStep + 1} / 20 &nbsp; {Math.round(replaySnapshots[replayStep]?.progress_percent || 0)}%
                 </span>
               </div>
-              <span className="text-mono" style={{ color: 'var(--text-muted)', borderLeft: '1px solid var(--border)', paddingLeft: '12px' }}>
-                {new Date(replaySnapshots[replayStep]?.timestamp || Date.now()).toLocaleTimeString([], {
+              <span className="text-mono" style={{ color: 'var(--text-muted)', borderLeft: '1px solid var(--border)', paddingLeft: '12px', minWidth: '60px', textAlign: 'center' }}>
+                {simulationActive ? `T+${replayStep * 3}m` : new Date(replaySnapshots[replayStep]?.timestamp || Date.now()).toLocaleTimeString([], {
                   hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
                 })}
               </span>
             </div>
-          ) : null}
+          )}
         </div>
       )}
     </div>
