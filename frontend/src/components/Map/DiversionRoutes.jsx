@@ -397,7 +397,6 @@ function DiversionRoutes({ routes }) {
       {renderCongestionCircle()}
       {renderBarricadeMarker()}
       {renderDiversionMarker()}
-      {renderPolicyMarkers()}
       {renderBarricadePlacements()}
     </>
   )
