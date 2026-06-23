@@ -328,7 +328,7 @@ EXPECTED IMPACT OUTCOME:
   )
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
+    <div style={{ flex: 1, overflowY: 'auto', padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
       {isSimulating && (
         <div style={{
           position: 'absolute',
@@ -363,7 +363,7 @@ EXPECTED IMPACT OUTCOME:
         <h2 className="text-section-heading">What-If Simulator</h2>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         
         {/* Weather Scenario Selector */}
         <div>
@@ -562,7 +562,7 @@ EXPECTED IMPACT OUTCOME:
         )}
 
         {simulationActive && (
-          <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p className="text-eyebrow" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <IconChartBar size={12} color="var(--success)" /> SIMULATION RESULTS
@@ -794,62 +794,66 @@ EXPECTED IMPACT OUTCOME:
             )}
 
             {resourceAllocation && Object.keys(resourceAllocation).length > 0 && (
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px', marginTop: '4px' }}>
-                <p className="text-eyebrow" style={{ margin: '0 0 10px 0', fontSize: '9px', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', marginTop: '4px' }}>
+                <p className="text-eyebrow" style={{ margin: '0 0 8px 0', fontSize: '9px', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>
                   SMART RESOURCE DISPATCH
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {Object.entries(resourceAllocation)
                     .filter(([_, alloc]) => alloc.police > 0 || alloc.barricades > 0)
                     .slice(0, 4)
                     .map(([zoneId, alloc]) => (
                       <div key={zoneId} style={{
                         display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
+                        flexDirection: 'column',
+                        gap: '6px',
                         background: 'rgba(255, 255, 255, 0.02)',
                         border: '1px solid var(--border)',
                         borderRadius: '6px',
-                        padding: '10px 12px',
+                        padding: '8px 10px',
                       }}>
-                        <span className="text-mono" style={{ color: 'var(--text-primary)', fontSize: '12px', fontWeight: 600 }}>
+                        <span className="text-mono" style={{ color: 'var(--text-primary)', fontSize: '11px', fontWeight: 600 }}>
                           Ward {zoneId}
                         </span>
                         
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '6px' }}>
                           {alloc.police > 0 && (
                             <div style={{
+                              flex: 1,
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
+                              justifyContent: 'center',
+                              gap: '4px',
                               background: 'rgba(0, 240, 255, 0.06)',
-                              border: '1px solid rgba(0, 240, 255, 0.2)',
+                              border: '1px solid rgba(0, 240, 255, 0.15)',
                               borderRadius: '4px',
-                              padding: '4px 8px',
-                              fontSize: '11px',
+                              padding: '4px 6px',
+                              fontSize: '10px',
                               fontFamily: 'var(--font-mono)'
                             }}>
-                              <IconShieldCheck size={12} color="#00f0ff" />
+                              <IconShieldCheck size={11} color="#00f0ff" />
                               <span style={{ color: '#00f0ff', fontWeight: 700 }}>{alloc.police}</span>
-                              <span style={{ color: 'rgba(0, 240, 255, 0.6)', fontSize: '9px', fontWeight: 500 }}>POLICE</span>
+                              <span style={{ color: 'rgba(0, 240, 255, 0.6)', fontSize: '8px', fontWeight: 500 }}>POLICE</span>
                             </div>
                           )}
 
                           {alloc.barricades > 0 && (
                             <div style={{
+                              flex: 1,
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
+                              justifyContent: 'center',
+                              gap: '4px',
                               background: 'rgba(255, 159, 10, 0.06)',
-                              border: '1px solid rgba(255, 159, 10, 0.2)',
+                              border: '1px solid rgba(255, 159, 10, 0.15)',
                               borderRadius: '4px',
-                              padding: '4px 8px',
-                              fontSize: '11px',
+                              padding: '4px 6px',
+                              fontSize: '10px',
                               fontFamily: 'var(--font-mono)'
                             }}>
-                              <IconBarrierBlock size={12} color="#ff9f0a" />
+                              <IconBarrierBlock size={11} color="#ff9f0a" />
                               <span style={{ color: '#ff9f0a', fontWeight: 700 }}>{alloc.barricades}</span>
-                              <span style={{ color: 'rgba(255, 159, 10, 0.6)', fontSize: '9px', fontWeight: 500 }}>BARRICADES</span>
+                              <span style={{ color: 'rgba(255, 159, 10, 0.6)', fontSize: '8px', fontWeight: 500 }}>BARRICADES</span>
                             </div>
                           )}
                         </div>
