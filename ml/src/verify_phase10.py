@@ -90,27 +90,25 @@ def test_outputs():
     else:
         print("  - Route cache event count check: PASSED (>= 50)")
 
-    # 4. Test zone_scores.csv
-    print("\n4. Checking zone_scores.csv distributions...")
-    if not os.path.exists(ZONE_SCORES_PATH):
-        print(f"FAIL: zone_scores.csv not found at {ZONE_SCORES_PATH}")
+    # 4. Test baseline_scores.json distributions
+    print("\n4. Checking baseline_scores.json distributions...")
+    baseline_scores_path = os.path.join(ml_dir, "data", "processed", "baseline_scores.json")
+    if not os.path.exists(baseline_scores_path):
+        print(f"FAIL: baseline_scores.json not found at {baseline_scores_path}")
         return False
         
-    df = pd.read_csv(ZONE_SCORES_PATH)
-    print(f"  - Total rows in zone_scores.csv: {len(df)}")
-    if df.empty:
-        print("FAIL: zone_scores.csv is empty")
+    with open(baseline_scores_path, "r") as f:
+        baseline_scores = json.load(f)
+        
+    print(f"  - Total zones in baseline_scores.json: {len(baseline_scores)}")
+    if not baseline_scores:
+        print("FAIL: baseline_scores.json is empty")
         return False
         
-    required_cols = ["event_id", "zone_id", "score"]
-    for col in required_cols:
-        if col not in df.columns:
-            print(f"FAIL: zone_scores.csv is missing column '{col}'")
-            return False
-            
-    score_min = df["score"].min()
-    score_max = df["score"].max()
-    score_mean = df["score"].mean()
+    scores = [float(v) for v in baseline_scores.values()]
+    score_min = min(scores)
+    score_max = max(scores)
+    score_mean = sum(scores) / len(scores)
     print(f"  - Score stats: min={score_min:.2f}, max={score_max:.2f}, mean={score_mean:.2f}")
     if not (0 <= score_min <= 100) or not (0 <= score_max <= 100):
         print("FAIL: scores are not within [0, 100] range")

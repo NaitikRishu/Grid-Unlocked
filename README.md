@@ -8,424 +8,130 @@ app_port: 7860
 pinned: false
 ---
 
-# Grid Unlocked
+# 🌐 Grid Unlocked: Predictive Traffic Twin & Control Room Simulator
 
-Grid Unlocked is a traffic intelligence and simulation platform for analyzing urban congestion, predicting impact, simulating interventions, and visualizing route diversions on a city map.
-
-Repository: [NaitikRishu/Grid-Unlocked](https://github.com/NaitikRishu/Grid-Unlocked)
-
-## Quick Start (Local Setup & Run)
-
-To make running and evaluating the application from the submission ZIP as simple as possible, we have provided unified launcher scripts that automatically set up dependencies (virtual environment, pip packages, and npm libraries) and launch all services simultaneously.
-
-### For macOS and Linux:
-1. Open a terminal in the project root directory.
-2. Run:
-   ```bash
-   ./run_local.sh
-   ```
-3. Once running, open your browser and navigate to:
-   - **Frontend Dashboard:** [http://localhost:5173](http://localhost:5173)
-   - **FastAPI API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-   - **Express WS Gateway:** [http://localhost:3001](http://localhost:3001)
-4. Press `Ctrl+C` in the terminal to gracefully stop all services.
-
-### For Windows:
-1. Double-click the `run_local.bat` file in the project root directory (or run it via Command Prompt).
-2. Access the links above.
+**Grid Unlocked** is a research-grade, real-time traffic intelligence and what-if simulation platform. It serves as a **digital twin** of urban road networks, designed to assist municipal dispatchers and traffic engineers in proactively modeling, predicting, and mitigating metropolitan congestion cascades.
 
 ---
 
-## Project Summary
+## 🚀 Quick Start (Local Setup & Run)
 
-The system combines:
+We have provided automated launcher scripts that automatically verify prerequisites, configure Python virtual environments, install dependencies, and launch all services simultaneously.
 
-- historical traffic event data
-- traffic violation data
-- OpenStreetMap road graphs
-- ML-based congestion prediction
-- graph-based congestion propagation
-- what-if simulation
-- replay and dashboard visualization
+### 🍏 For macOS and Linux:
+1. Open a terminal in the project root directory.
+2. Grant execute permissions and run the launcher:
+   ```bash
+   chmod +x run_local.sh
+   ./run_local.sh
+   ```
 
-The goal is to help estimate congestion impact, test intervention strategies, and present results through an interactive frontend.
+### 🪟 For Windows:
+1. Run the batch script via Command Prompt / PowerShell:
+   ```cmd
+   run_local.bat
+   ```
 
-## Current Status
+### 🔗 Local Endpoints:
+Once running, you can access the services at:
+*   **Frontend Dashboard:** [http://localhost:5173](http://localhost:5173) (Interactive map and HUD control room)
+*   **FastAPI API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs) (Interactive Swagger API)
+*   **Express Gateway/WS:** [http://localhost:3001](http://localhost:3001) (Real-time WebSockets replay stream)
 
-- Project documentation and structure are being prepared
-- No active phase has been started yet
-- This README is based on the detailed implementation workplan
+---
 
-## High-Level Architecture
+## 🏛️ System Architecture
 
-The project is split into three major parts:
-
-- `ml/` for data cleaning, feature engineering, graph logic, model training, simulation, and analytics
-- `server/` for the Node/Express proxy layer and WebSocket replay service
-- `frontend/` for the React dashboard, map UI, controls, and analytics views
-
-### MapmyIndia (Mappls) Integration
-
-We have integrated MapmyIndia (Mappls) APIs into the project to improve data snapping accuracy (Phase 2) and frontend map rendering (Phase 2+). To prevent code breakage, the core NetworkX/OSMnx graph engine remains the base architecture, and MapmyIndia integration is designed with a graceful fallback. For details, see [docs/mapmyindia_integration.md](file:///Users/naitikrishu/Desktop/Grid-Unlocked/docs/mapmyindia_integration.md).
-
-
-## Folder Structure
+Grid Unlocked is built on a high-throughput, decoupled architecture designed to scale:
 
 ```text
-gridlock/
-├── ml/
+                  ┌──────────────────────────────┐
+                  │    FastAPI Python Service    │
+                  │ (Dijkstra, XGBoost Inference)│
+                  │          Port 8000           │
+                  └──────────────┬───────────────┘
+                                 │ Proxy
+                  ┌──────────────▼───────────────┐
+                  │    Node.js Express Gateway   │
+                  │  (WebSockets Replay Server)  │
+                  │          Port 3001           │
+                  └──────────────┬───────────────┘
+                                 │ HTTP / WSS
+                  ┌──────────────▼───────────────┐
+                  │   Vite React Frontend App    │
+                  │    (Tailwind, Leaflet Map)   │
+                  │          Port 5173           │
+                  └──────────────────────────────┘
+```
+
+1.  **FastAPI Backend (ML & Routing Engine)**: Runs Dijkstra routing on spatial road graphs, performs inference using predictive duration models, and simulates resource allocations.
+2.  **Node Express Server (Proxy & WebSocket Server)**: Handles CORS, proxies HTTP queries to the Python API, and streams time-sliced historical replay snapshots to the frontend over WebSockets.
+3.  **Vite React Frontend (Traffic Dashboard)**: Renders zone choropleth layers, alternate route polylines, physical barricade points, and telemetry HUD metrics.
+
+---
+
+## 💡 Core Innovations
+
+### 1. Bi-Directional Map-Sidebar Sync
+*   **Interactive Barricading:** Dispatchers can click recommended barricade placement points directly on the Leaflet map to deploy physical barricades (turning them red).
+*   **State Alignment:** Dragging the sidebar resource sliders automatically deploys/retracts map barricades, and clicking map barricades dynamically adjusts sidebar sliders. Every toggle triggers a **real-time recalculation of detour routes and travel speed changes**.
+
+### 2. Time-Scrubbing Dispersion Scrubber
+*   Provides an interactive 60-minute playback scrubber for both **historical replays** (orange theme) and **what-if simulations** (blue theme).
+*   Wards decay exponentially back to their baselines over the timeline:
+    $$Score(t) = Baseline + (Peak - Baseline) \times e^{-t \cdot 0.15}$$
+*   Normalized against the peak congestion score at simulation initialization to ensure realistic color transition from critical red to green.
+
+### 3. Integrated Route Telemetry HUD
+*   Compares **three alternate detour routes** (Cyan, Orange, and Magenta) in real-time.
+*   Displays comparative metrics for travel times, average speeds, and relative carbon (CO₂) emission reductions based on active traffic policies.
+
+### 4. Decision-Support Logs
+*   **Calibrated Risk Gauge:** A visual status bar indicating LOW (`<40%`), MEDIUM (`40%-70%`), or CRITICAL (`>70%`) risk based on predicted durations.
+*   **Supporting Evidence:** Logs the top 3 similar historical incidents in the active ward zone using KGIS Ward ID and Incident Cause matching.
+*   **Log Actual Outcome:** A dispatch log form letting operators record active officer usage, barricades, priority status, and custom dispatcher notes.
+
+---
+
+## 📂 Project Directory Structure
+
+```text
+Grid-Unlocked/
+├── ml/                      # Machine Learning & Spatial Processing
+│   ├── api/                 # FastAPI routes, schemas, and endpoints
 │   ├── data/
-│   │   ├── raw/
-│   │   │   ├── events.csv
-│   │   │   └── violations.csv
-│   │   ├── processed/
-│   │   │   ├── events_clean.csv
-│   │   │   ├── violations_clean.csv
-│   │   │   ├── feature_matrix.csv
-│   │   │   ├── node_mapping.csv
-│   │   │   ├── zone_scores.csv
-│   │   │   └── replay_data.json
-│   │   └── geo/
-│   │       ├── bengaluru_graph.pkl
-│   │       ├── bengaluru_roads.geojson
-│   │       └── bengaluru_zones.geojson
-│   ├── notebooks/
-│   │   └── eda.ipynb
-│   ├── models/
-│   │   ├── congestion_model.pkl
-│   │   └── impact_classifier.pkl
-│   ├── src/
-│   │   ├── clean_events.py
-│   │   ├── clean_violations.py
-│   │   ├── feature_engineering.py
-│   │   ├── train_model.py
-│   │   ├── inference.py
-│   │   ├── build_graph.py
-│   │   ├── snap_to_road.py
-│   │   ├── graph_utils.py
-│   │   ├── congestion_propagation.py
-│   │   ├── route_engine.py
-│   │   ├── event_simulator.py
-│   │   ├── resource_allocator.py
-│   │   └── replay_generator.py
-│   ├── api/
-│   │   ├── main.py
-│   │   ├── schemas.py
-│   │   └── routes/
-│   │       ├── events.py
-│   │       ├── zones.py
-│   │       ├── simulate.py
-│   │       ├── violations.py
-│   │       ├── routes.py
-│   │       └── analytics.py
-│   └── requirements.txt
-├── server/
-│   ├── index.js
-│   ├── config.js
-│   ├── routes/
-│   │   └── proxy.js
-│   ├── ws/
-│   │   └── replay.js
-│   ├── middleware/
-│   │   └── cors.js
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Map/
-│   │   │   ├── Controls/
-│   │   │   ├── Analytics/
-│   │   │   └── Layout/
-│   │   ├── hooks/
-│   │   ├── store/
-│   │   ├── api/
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── public/
-│   │   └── bengaluru_zones.geojson
-│   ├── index.html
-│   └── package.json
-├── docs/
-│   ├── concept_note.md
-│   ├── api_contract.md
-│   └── demo_script.md
-└── README.md
+│   │   ├── geo/             # OSM Bengaluru Graph, road network & ward boundary GeoJSONs
+│   │   └── processed/       # Precomputed baseline scores, route caches, and node mappings
+│   ├── models/              # Serialized XGBoost duration and Random Forest impact models
+│   ├── src/                 # Graph build, snapped road, and simulation algorithms
+│   └── requirements.txt     # Python environment requirements
+├── server/                  # Node Express WS Server & Proxy Layer
+│   ├── middleware/          # CORS configurations
+│   ├── routes/              # Proxy handlers to redirect traffic to FastAPI
+│   ├── ws/                  # WebSocket event stream handler
+│   └── package.json         # Node.js backend requirements
+├── frontend/                # React Dashboard UI
+│   ├── src/                 # Components, hooks, Zustand stores, and assets
+│   ├── public/              # Wards GeoJSON static assets
+│   └── package.json         # Frontend build requirements
+├── docs/                    # Design decks, walkthrough scripts, and concept reports
+├── run_local.sh             # macOS/Linux automated local setup launcher
+├── run_local.bat            # Windows automated local setup launcher
+├── Dockerfile               # Production Docker container
+├── start.sh                 # Unified container execution entry point
+└── README.md                # Project documentation
 ```
 
-## Core Features
-
-- Clean and preprocess traffic events and violations datasets
-- Build a Bengaluru road graph from OpenStreetMap
-- Snap event coordinates to road nodes and map them to zones
-- Engineer features for congestion prediction
-- Train models for congestion score and high-impact classification
-- Propagate congestion scores across nearby zones using graph distance
-- Generate alternate diversion routes
-- Run what-if simulations using manpower, barricades, diversions, and start time offsets
-- Allocate police and barricades across affected zones
-- Replay event progression over time through WebSocket snapshots
-- Visualize zones, events, heatmaps, routes, and analytics in the frontend
-
-## Phase Plan
-
-### Phase 0: Project Setup
-
-- set up Python environment and core dependencies
-- create the ML source files and API/service skeletons
-- initialize Express backend
-- initialize React frontend
-
-### Phase 1: Data Cleaning
-
-- clean `events.csv`
-- clean `violations.csv`
-- parse timestamps and normalize categorical fields
-- generate cleaned datasets for downstream work
-
-### Phase 2: Map Generation
-
-- download Bengaluru road graph from OpenStreetMap
-- export roads to GeoJSON
-- download ward or zone polygons
-- snap events to nearest road nodes using **MapmyIndia Snap to Road API** (with a graceful fallback to standard OSMnx `nearest_nodes` matching if credentials are not configured)
-- spatially join events to zones
-
-
-This is the most critical dependency phase because later ML, routing, and frontend work depend on these outputs.
-
-### Phase 3: Feature Engineering
-
-- build temporal, spatial, and event-based features
-- compute violation density and historical averages
-- generate `feature_matrix.csv`
-
-### Phase 4: Model Training
-
-- train regression model for congestion score
-- train classifier for high-impact events
-- evaluate with RMSE, MAE, R2, F1, precision, and recall
-- expose inference for event-level predictions
-
-### Phase 5: Congestion Propagation
-
-- compute graph distance between zones
-- propagate congestion using exponential decay
-- aggregate zone-level scores
-- generate `zone_scores.csv`
-
-### Phase 6: Route Engine
-
-- identify blocked road segments around an event
-- compute alternate routes
-- estimate delay by congestion level
-- build and cache route GeoJSON outputs
-
-### Phase 7: Event Simulator
-
-- predict base congestion
-- adjust scores using manpower, barricades, diversion mode, and time shifts
-- compute updated zone scores
-- return alternate routes and resource allocation
-
-### Phase 8: Resource Allocator
-
-- distribute police and barricades by zone score
-- handle low-resource and edge-case scenarios
-- connect allocations into the simulator response
-
-### Phase 9: Replay
-
-- generate time-stepped event replay snapshots
-- expose replay API output
-- stream snapshots over WebSocket for frontend playback
-
-### Phase 10: Integration and Submission
-
-- perform end-to-end testing across ML, backend, and frontend
-- fix API, proxy, rendering, and data edge cases
-- finalize docs, concept note, and submission materials
-
-## API Contract
-
-### `GET /api/events`
-
-Returns a list of event objects.
-
-### `GET /api/events/:id`
-
-Returns one event with prediction details.
-
-### `GET /api/zones`
-
-Returns zone GeoJSON with baseline congestion score properties.
-
-### `GET /api/violations/heatmap`
-
-Returns heatmap points in the form:
-
-```json
-[{ "lat": 0, "lon": 0, "count": 0 }]
-```
-
-### `GET /api/routes/:event_id`
-
-Returns alternate route GeoJSON for an event.
-
-### `POST /api/simulate`
-
-Request body:
-
-```json
-{
-  "event_type": "string",
-  "latitude": 0,
-  "longitude": 0,
-  "start_datetime": "ISO string",
-  "manpower": 0,
-  "barricades": 0,
-  "diversion_active": true,
-  "start_time_offset_minutes": 0
-}
-```
-
-Response body:
-
-```json
-{
-  "zone_scores": { "zone_id": 0 },
-  "predicted_duration_minutes": 0,
-  "high_impact": false,
-  "delay_saved_minutes": 0,
-  "alternate_routes": [],
-  "resource_allocation": {
-    "zone_id": { "police": 0, "barricades": 0 }
-  }
-}
-```
-
-### `GET /api/analytics/post-event`
-
-Returns predicted vs actual event performance data.
-
-### `GET /api/analytics/zone-summary`
-
-Returns zone-level summary analytics.
-
-### `WS /replay`
-
-Streams replay snapshots for a chosen event until completion.
-
-## Important Outputs
-
-The project relies heavily on these generated artifacts:
-
-- `ml/data/geo/bengaluru_graph.pkl`
-- `ml/data/geo/bengaluru_roads.geojson`
-- `ml/data/geo/bengaluru_zones.geojson`
-- `ml/data/processed/events_clean.csv`
-- `ml/data/processed/violations_clean.csv`
-- `ml/data/processed/feature_matrix.csv`
-- `ml/data/processed/node_mapping.csv`
-- `ml/data/processed/zone_scores.csv`
-- `ml/data/processed/replay_data.json`
-- `ml/data/processed/route_cache.pkl`
-- `ml/models/congestion_model.pkl`
-- `ml/models/impact_classifier.pkl`
-
-## Priority Order
-
-### Must Have
-
-- cleaned events and feature matrix
-- Bengaluru graph and zone GeoJSON
-- trained congestion model and inference flow
-- working congestion propagation
-- `POST /api/simulate` returning zone scores
-- choropleth map updating from simulation response
-- working what-if controls
-
-### Nice to Have
-
-- diversion route polylines
-- replay animation
-- post-event accuracy table
-- violation heatmap layer
-- zone ranking table
-
-### Can Be Cut If Time Is Short
-
-- delay comparison charts
-- multiple route colour refinements
-- mobile responsiveness
-- precomputed route cache if live computation is sufficient
-
-## Setup Plan
-
-### Python / ML
-
-```bash
-python -m venv venv
-source venv/bin/activate
-pip install osmnx networkx geopandas shapely pandas requests pickle5 python-dotenv
-```
-
-#### MapmyIndia API Key Configuration
-Create a `.env` file inside the `ml/` directory to store your MapmyIndia API credentials:
-```env
-MAPMYINDIA_CLIENT_ID=your_client_id
-MAPMYINDIA_CLIENT_SECRET=your_client_secret
-MAPMYINDIA_REST_API_KEY=your_rest_api_key
-```
-
-
-Additional ML and API packages expected in the plan include:
-
-```bash
-pip install pandas xgboost lightgbm scikit-learn fastapi uvicorn pydantic
-```
-
-### Backend
-
-```bash
-cd server
-npm install
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## End-to-End Run Plan
-
-When implementation is ready, the expected local services are:
-
-- FastAPI on port `8000`
-- Express on port `3001`
-- React frontend on port `5173`
-
-Typical flow:
-
-1. Start FastAPI
-2. Start Express
-3. Start React
-4. Open the dashboard
-5. Load zones and events
-6. Run a simulation
-7. Inspect updated map layers and analytics
-8. Play a replay for a selected event
-
-## Rules and Constraints
-
-- The API contract should remain stable after Phase 5
-- Any endpoint change should be agreed before updating dependent layers
-- Spatial outputs are a hard dependency for the rest of the project
-- End-to-end testing is required before submission
-- Submission deadline in the workplan is before June 21, 2026, 11:59 PM IST
-
-## Notes
-
-This README is derived from the detailed implementation workplan and is intended to serve as the project’s main starting document until the repository is fully scaffolded.
+---
+
+## 📊 Model Training & Performance
+The platform's prediction accuracy relies on:
+1.  **XGBoost Regressor (`congestion_model.pkl`)**: Predicts the duration of traffic bottlenecks.
+2.  **Random Forest Classifier (`impact_classifier.pkl`)**: Predicts if an incident will result in critical high-impact congestion.
+3.  **OSM Graph (`bengaluru_graph.pkl`)**: Represents Bengaluru's drive network containing 40,000+ nodes and 100,000+ road segments.
+
+---
+
+## 📦 Production Deployments
+*   **Production Frontend:** Hosted on [Netlify](https://grid-unlocked-1782050398.netlify.app) and configured to point to the active backend space.
+*   **Production Backend:** Hosted on [Hugging Face Spaces](https://huggingface.co/spaces/naitikrishu/grid-unlocked-backend) inside a custom Docker environment.
